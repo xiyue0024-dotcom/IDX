@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh" data-theme="dark" data-redup="1">
+<html lang="id" data-theme="dark" data-redup="1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IDX 终端 · TradingView</title>
+<title>Terminal IDX · TradingView</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2358a6ff'/><text x='16' y='23' font-size='17' font-family='sans-serif' text-anchor='middle' fill='white'>I</text></svg>">
 <style>
 /* ===== design tokens ===== */
@@ -115,6 +115,25 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:
 .fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
 .fld input,.fld select{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text)}
 .hint{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* ===== login / account ===== */
+.login-overlay{position:fixed;inset:0;z-index:400;background:radial-gradient(1200px 600px at 50% -10%,rgba(88,166,255,.18),transparent),var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.login-card{width:min(380px,100%);background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.login-brand{font-weight:800;font-size:20px}
+.login-brand b{color:var(--accent2)}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:4px}
+.login-msg{min-height:16px;font-size:12px;color:var(--down)}
+.login-btn{padding:9px;font-weight:700}
+.login-hint{font-size:10px;color:var(--muted2);line-height:1.5}
+.acct-sec{border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;flex-direction:column;gap:8px}
+.acct-sec-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.adm-form{display:grid;grid-template-columns:1fr 1fr 90px auto;gap:4px}
+.adm-form input,.adm-form select{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:11px;min-width:0}
+.adm-list{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto}
+.adm-row{display:grid;grid-template-columns:1fr 86px auto auto auto;gap:4px;align-items:center;font-size:11px;padding:4px 0;border-bottom:1px dashed var(--border)}
+.adm-row select{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:10px}
+.adm-row button{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:var(--text)}
+.adm-row button:hover{border-color:var(--accent2)}
 
 /* ===== diagnostic ===== */
 .diag{margin-bottom:10px;padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:rgba(245,166,35,.10);color:var(--text);font-size:12px;line-height:1.5;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -285,6 +304,17 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:
 </style>
 </head>
 <body>
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-brand">IDX <b>Terminal</b></div>
+    <div class="login-sub">Masuk untuk melanjutkan · Edukasi pasar Indonesia</div>
+    <label class="fld"><span>Username</span><input id="loginUser" autocomplete="username" placeholder="username"></label>
+    <label class="fld"><span>Password</span><input id="loginPass" type="password" autocomplete="current-password" placeholder="password"></label>
+    <div id="loginMsg" class="login-msg"></div>
+    <button id="loginBtn" class="btn primary login-btn">Masuk</button>
+    <div class="login-hint" id="loginHint">Mode lokal: admin / admin123</div>
+  </div>
+</div>
 <div class="wrap">
   <div id="diag" class="diag" hidden><span id="diagMsg"></span><button id="diagClose" class="btn">知道了</button></div>
   <header>
@@ -296,10 +326,12 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:
       <div id="searchResults" class="search-results" hidden></div>
     </div>
     <span class="spacer"></span>
+    <span id="acctChip" class="pill" hidden></span>
+    <button id="logoutBtn" class="btn" hidden>Keluar</button>
     <button id="refreshBtn" class="btn">刷新</button>
     <button id="themeBtn" class="btn" title="主题">🌙</button>
     <select id="langSel" class="btn" title="语言">
-      <option value="zh">中文</option><option value="en">EN</option><option value="id">ID</option>
+      <option value="zh">Mandarin</option><option value="en">English</option><option value="id">Indonesia</option>
     </select>
     <button id="setBtn" class="btn" title="设置">⚙</button>
   </header>
@@ -493,9 +525,34 @@ footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:
     <div class="modal-body">
       <label class="fld"><span>数据源前缀（默认 r.jina.ai；也可填自建 CORS 代理）</span><input id="setProxy" placeholder="https://r.jina.ai/"></label>
       <label class="fld"><span>主题</span><select id="setTheme"><option value="dark">暗色</option><option value="light">亮色</option></select></label>
-      <label class="fld"><span>语言</span><select id="setLang"><option value="zh">中文</option><option value="en">English</option><option value="id">Indonesia</option></select></label>
+      <label class="fld"><span>语言</span><select id="setLang"><option value="zh">Mandarin</option><option value="en">English</option><option value="id">Indonesia</option></select></label>
       <label class="fld"><span>涨跌配色</span><select id="setRedup"><option value="1">红涨绿跌（A 股习惯）</option><option value="0">绿涨红跌（TV 习惯）</option></select></label>
       <label class="fld"><span>自动刷新</span><select id="setAuto"><option value="1">开（60 秒）</option><option value="0">关</option></select></label>
+      <div class="acct-sec">
+        <div class="acct-sec-title">Akun & Google Sheets</div>
+        <label class="fld"><span>Google Apps Script URL（login & data akun）</span><input id="setAuthUrl" placeholder="https://script.google.com/macros/s/.../exec"></label>
+        <div class="hint">Kosongkan untuk mode lokal (admin / admin123). Isi URL untuk login via Google Sheets.</div>
+        <label class="fld"><span>Username baru</span><input id="setNewUser" placeholder="username"></label>
+        <label class="fld"><span>Password baru</span><input id="setNewPass" type="password" placeholder="password"></label>
+        <label class="fld"><span>Password saat ini</span><input id="setCurPass" type="password" placeholder="password saat ini"></label>
+        <button id="setAcctBtn" class="btn">Simpan akun</button>
+        <div id="setAcctMsg" class="msg"></div>
+      </div>
+      <div class="acct-sec" id="adminSec" hidden>
+        <div class="acct-sec-title">Admin · Manajemen Pengguna</div>
+        <div class="adm-form" style="grid-template-columns:1fr auto;">
+          <input id="admPass" type="password" placeholder="password admin">
+          <button id="admLoad" class="btn">Muat user</button>
+        </div>
+        <div class="adm-form">
+          <input id="admUser" placeholder="username baru">
+          <input id="admNewPass" type="password" placeholder="password">
+          <select id="admRole"><option value="user">user</option><option value="admin">admin</option><option value="owner">owner</option></select>
+          <button id="admAdd" class="btn">Tambah</button>
+        </div>
+        <div id="admMsg" class="msg"></div>
+        <div id="admList" class="adm-list"></div>
+      </div>
       <div class="hint">默认走 r.jina.ai（公共 Reader，可能限流）。若填 allorigins 等原始代理前缀，会自动追加 URL 编码。代理失效时可勾选「纯 TV 模式」。TV 图表配色不随涨跌配色切换。</div>
     </div>
     <div class="modal-foot"><button id="setSave" class="btn primary">保存</button></div>
@@ -519,16 +576,17 @@ var LS = {
 };
 
 /* ---------- 0. CONFIG ---------- */
-var BUILD = "M1 · v1.0";
+var BUILD = "Terminal IDX · Edukasi";
 var DEFAULT_PROXY = "https://r.jina.ai/";
 var CONFIG = {
   proxy: LS.getItem("idx_proxy") || DEFAULT_PROXY,
   tvPrefix: "IDX:",
   defaults: ["BBCA.JK","BBRI.JK","BMRI.JK","TLKM.JK","ASII.JK","BBTN.JK","UNVR.JK","ICBP.JK","GOTO.JK","KLBF.JK","PGAS.JK","BBNI.JK","ADRO.JK","ANTM.JK","INDF.JK","UNTR.JK"],
-  pollMs: 60000
+  pollMs: 60000,
+  authUrl: LS.getItem("idx_auth_url") || ""
 };
 var IDX_UNIVERSE = [["BBCA","PT Bank Central Asia Tbk","Finance"],["BBRI","PT Bank Rakyat Indonesia (Persero) Tbk Class B","Finance"],["DCII","PT DCI Indonesia Tbk","Technology Services"],["BMRI","PT Bank Mandiri (Persero) Tbk","Finance"],["BYAN","PT Bayan Resources Tbk","Energy Minerals"],["AMMN","PT Amman Mineral Internasional Tbk","Non-Energy Minerals"],["BREN","PT Barito Renewables Energy Tbk","Utilities"],["TLKM","PT Telkom Indonesia (Persero) Tbk Class B","Communications"],["ASII","PT Astra International Tbk","Technology Services"],["DNET","PT Indoritel Makmur Internasional Tbk","Communications"],["SRAJ","PT Sejahteraraya Anugrahjaya Tbk","Health Services"],["DSSA","PT Dian Swastatika Sentosa Tbk","Energy Minerals"],["SMMA","PT Sinar Mas Multiartha Tbk Class A","Finance"],["BBNI","PT Bank Negara Indonesia (Persero) Tbk Class B","Finance"],["TPIA","PT Chandra Asri Pacific Tbk","Process Industries"],["MORA","PT Ekamas Mora Republik Tbk","Communications"],["MPRO","PT Maha Properti Indonesia Tbk","Finance"],["BRPT","PT Barito Pacific Tbk","Non-Energy Minerals"],["CASA","PT Capital Financial Indonesia Tbk","Finance"],["UNTR","PT United Tractors Tbk","Energy Minerals"],["AADI","Pt Adaro Andalan Indonesia Tbk","Energy Minerals"],["EMAS","PT Merdeka Gold Resources Tbk","Non-Energy Minerals"],["HMSP","PT Hanjaya Mandala Sampoerna Tbk","Consumer Non-Durables"],["PANI","PT Pantai Indah Kapuk Dua Tbk","Consumer Non-Durables"],["ADRO","PT Alamtri Resources Indonesia Tbk","Energy Minerals"],["ICBP","PT Indofood CBP Sukses Makmur Tbk","Consumer Non-Durables"],["ANTM","PT ANTAM (Persero) Tbk","Non-Energy Minerals"],["INDF","PT Indofood Sukses Makmur Tbk","Consumer Non-Durables"],["BNLI","PT Bank Permata Tbk Class A","Finance"],["UNVR","PT Unilever Indonesia Tbk","Consumer Non-Durables"],["ADMR","PT Alamtri Minerals Indonesia Tbk","Energy Minerals"],["BRMS","PT Bumi Resources Minerals Tbk Class A","Non-Energy Minerals"],["BDMN","PT Bank Danamon Indonesia Tbk Class A","Finance"],["ISAT","PT Indosat Tbk Class B","Communications"],["MDKA","PT Merdeka Copper Gold Tbk","Non-Energy Minerals"],["BRIS","PT Bank Syariah Indonesia (Persero) Tbk","Finance"],["CUAN","PT Petrindo Jaya Kreasi Tbk","Non-Energy Minerals"],["PGUN","PT Pradiksi Gunatama Tbk","Process Industries"],["NCKL","PT Trimegah Bangun Persada Tbk","Non-Energy Minerals"],["MEGA","PT Bank Mega Tbk","Finance"],["CDIA","PT Chandra Daya Investasi Tbk.","Utilities"],["BUMI","PT Bumi Resources Tbk Class A","Non-Energy Minerals"],["GEMS","PT Golden Energy Mines Tbk","Energy Minerals"],["IMPC","PT Impack Pratama Industri Tbk","Producer Manufacturing"],["CPIN","PT Charoen Pokphand Indonesia Tbk","Process Industries"],["PGEO","PT Pertamina Geothermal Energy Tbk","Utilities"],["AMRT","PT Sumber Alfaria Trijaya","Retail Trade"],["TAPG","PT Triputra Agro Persada Tbk","Process Industries"],["BNGA","PT Bank CIMB Niaga Tbk Class A","Finance"],["INCO","PT Vale Indonesia Tbk","Non-Energy Minerals"],["INKP","PT Indah Kiat Pulp & Paper Tbk","Process Industries"],["BELI","PT Global Digital Niaga Tbk","Retail Trade"],["PTBA","PT Bukit Asam (Persero) Tbk","Energy Minerals"],["CMRY","PT Cisarua Mountain Dairy Tbk","Distribution Services"],["MEDC","PT Medco Energi Internasional Tbk","Energy Minerals"],["KLBF","PT Kalbe Farma Tbk","Health Technology"],["MBMA","PT Merdeka Battery Materials Tbk","Non-Energy Minerals"],["MTEL","PT Dayamitra Telekomunikasi Tbk","Communications"],["GGRM","PT Gudang Garam Tbk","Consumer Non-Durables"],["MYOR","PT Mayora Indah Tbk","Consumer Non-Durables"],["BSWD","PT Bank of India Indonesia Tbk","Finance"],["EXCL","PT XLSMART Telecom Sejahtera Tbk","Communications"],["PGAS","PT Perusahaan Gas Negara (Persero) Tbk Class B","Energy Minerals"],["AKRA","PT AKR Corporindo Tbk","Distribution Services"],["ITMG","PT Indo Tambangraya Megah Tbk","Energy Minerals"],["TINS","PT TIMAH (Persero) Tbk","Non-Energy Minerals"],["NISP","PT Bank OCBC NISP Tbk","Finance"],["ENRG","PT Energi Mega Persada Tbk","Energy Minerals"],["FAPA","PT FAP Agri Tbk","Consumer Non-Durables"],["BTPN","PT Bank SMBC Indonesia Tbk","Finance"],["PTRO","PT Petrosea Tbk","Industrial Services"],["SILO","PT Siloam International Hospitals Tbk Reg-S","Health Services"],["GOTO","PT GoTo Gojek Tokopedia Tbk","Technology Services"],["TBIG","PT Tower Bersama Infrastructure Tbk","Finance"],["BINA","PT Bank Ina Perdana Tbk","Finance"],["ARCI","PT Archi Indonesia Tbk","Non-Energy Minerals"],["MLPT","PT Multipolar Technology Tbk","Technology Services"],["ULTJ","PT Ultrajaya Milk Industry & Trading Co. Tbk","Consumer Non-Durables"],["SRTG","PT Saratoga Investama Sedaya Tbk","Finance"],["TOWR","PT Sarana Menara Nusantara Tbk","Finance"],["MAPI","PT Mitra Adiperkasa Tbk","Retail Trade"],["JARR","PT Jhonlin Agro Raya Tbk","Process Industries"],["JPFA","PT Japfa Comfeed Indonesia Tbk Class A","Process Industries"],["JSMR","PT Jasa Marga (Persero) Tbk Class B","Transportation"],["ADES","PT Akasha Wira International Tbk","Consumer Non-Durables"],["TKIM","PT Pabrik Kertas Tjiwi Kimia Tbk","Process Industries"],["MIKA","PT Mitra Keluarga Karyasehat Tbk","Health Services"],["INTP","PT Indocement Tunggal Prakarsa Tbk","Non-Energy Minerals"],["MGLV","PT NexAI Digital Infrastruktur Tbk.","Consumer Durables"],["LIFE","PT MSIG Life Insurance Indonesia Tbk","Finance"],["EMTK","PT Elang Mahkota Teknologi Tbk","Consumer Services"],["MDIY","PT Daya Intiguna Yasa Tbk","Retail Trade"],["SMAR","PT Sinar Mas Agro Resources & Technology Tbk","Process Industries"],["AALI","PT Astra Agro Lestari Tbk","Process Industries"],["AVIA","PT Avia Avian Tbk","Process Industries"],["PNBN","PT Bank Pan Indonesia Tbk","Finance"],["MKPI","PT Metropolitan Kentjana Tbk","Finance"],["VKTR","PT VKTR Teknologi Mobilitas Tbk","Consumer Durables"],["CBDK","PT Bangun Kosambi Sukses Tbk","Finance"],["MAPA","PT MAP Aktif Adiperkasa Tbk","Retail Trade"],["GIAA","PT Garuda Indonesia (Persero) Tbk Class B","Transportation"],["AUTO","PT Astra Otoparts Tbk","Producer Manufacturing"],["BSIM","PT Bank Sinarmas Tbk","Finance"],["JRPT","PT Jaya Real Property Tbk","Finance"],["DSNG","PT Dharma Satya Nusantara Tbk","Non-Energy Minerals"],["SOHO","PT Soho Global Health Tbk","Health Technology"],["POWR","PT Cikarang Listrindo Tbk","Utilities"],["FORU","PT Fortune Indonesia Tbk","Commercial Services"],["PWON","PT Pakuwon Jati Tbk","Finance"],["DEWA","PT Darma Henwa Tbk","Energy Minerals"],["MLBI","PT Multi Bintang Indonesia Tbk","Consumer Non-Durables"],["BSSR","PT Baramulti Suksessarana Tbk","Energy Minerals"],["BBHI","PT Allo Bank Indonesia Tbk","Finance"],["CMNT","PT Cemindo Gemilang Tbk","Non-Energy Minerals"],["BNII","PT Bank Maybank Indonesia Tbk Class A","Finance"],["BBTN","PT Bank Tabungan Negara (Persero) Tbk","Finance"],["MCOL","PT Prima Andalan Mandiri Tbk","Energy Minerals"],["SGER","PT Sumber Global Energy Tbk","Non-Energy Minerals"],["NSSS","PT Nusantara Sawit Sejahtera Tbk","Process Industries"],["CITA","PT Cita Mineral Investindo Tbk","Consumer Durables"],["PACK","PT Abadi Nusantara Hijau Investama Tbk","Process Industries"],["STAA","PT Sumber Tani Agung Resources Tbk","Process Industries"],["BNBR","PT Bakrie & Brothers Tbk Class A","Industrial Services"],["SINI","PT Singaraja Putra Tbk","Consumer Services"],["TSPC","PT Tempo Scan Pacific Tbk","Distribution Services"],["CARE","PT Metro Healthcare Indonesia Tbk","Health Services"],["BFIN","PT BFI Finance Indonesia Tbk","Finance"],["BBSI","PT Krom Bank Indonesia Tbk","Finance"],["SUPA","PT Super Bank Indonesia Tbk","Finance"],["CTRA","PT Ciputra Development Tbk","Finance"],["PSAB","PT J Resources Asia Pasifik Tbk","Non-Energy Minerals"],["STTP","PT Siantar Top Tbk","Consumer Non-Durables"],["GOOD","PT Garudafood Putra Putri Jaya Tbk","Consumer Non-Durables"],["AGII","PT Samator Indo Gas Tbk","Process Industries"],["BUVA","PT Bukit Uluwatu Villa Tbk","Consumer Services"],["MKNT","Pt Mitra Komunikasi Nusantara Tbk","Distribution Services"],["BSDE","PT Bumi Serpong Damai Tbk","Finance"],["BUKA","PT Bukalapak.com Tbk","Retail Trade"],["PRAY","PT Famon Awal Bros Sedaya Tbk","Health Services"],["INDY","PT Indika Energy Tbk","Energy Minerals"],["ALII","PT Ancara Logistics Indonesia Tbk","Consumer Services"],["LSIP","PT Perusahaan Perkebunan London Sumatra Indonesia Tbk","Process Industries"],["ADMF","PT Adira Dinamika Multi Finance Tbk","Finance"],["SMMT","PT Golden Eagle Energy Tbk","Energy Minerals"],["SIDO","PT Industri Jamu dan Farmasi Sido Muncul Tbk","Health Technology"],["DMAS","PT Puradelta Lestari Tbk","Finance"],["SSMS","PT Sawit Sumbermas Sarana Tbk","Process Industries"],["SMSM","PT Selamat Sempurna Tbk","Producer Manufacturing"],["TCPI","PT Transcoal Pacific","Transportation"],["SMGR","PT Semen Indonesia (Persero) Tbk","Non-Energy Minerals"],["CLEO","PT Sariguna Primatirta Tbk","Consumer Non-Durables"],["HRUM","PT Harum Energy Tbk","Energy Minerals"],["RAJA","PT Rukun Raharja Tbk","Utilities"],["ESSA","PT ESSA Industries Indonesia Tbk","Energy Minerals"],["MIDI","PT Midi Utama Indonesia Tbk","Retail Trade"],["DUTI","PT Duta Pertiwi Tbk","Finance"],["CMNP","PT Citra Marga Nusaphala Persada Tbk","Transportation"],["RLCO","PT Abadi Lestari Indonesia Tbk","Health Technology"],["SCMA","PT Surya Citra Media Tbk","Consumer Services"],["PKPK","PT Paragon Karya Perkasa Tbk","Industrial Services"],["ERAA","PT Erajaya Swasembada Tbk","Distribution Services"],["BBMD","PT Bank Mestika Dharma Tbk","Finance"],["HEAL","PT Medikaloka Hermina Tbk","Health Services"],["RISE","PT Jaya Sukses Makmur Sentosa Tbk","Finance"],["SIMP","PT Salim Ivomas Pratama Tbk","Consumer Non-Durables"],["YUPI","Pt Yupi Indo Jelly Gum Tbk","Consumer Non-Durables"],["BJBR","PT Bank Pembangunan Daerah Jawa Barat & Banten Tbk","Finance"],["POLU","PT Golden Flower Tbk","Consumer Non-Durables"],["SGRO","PT Prime Agri Resources Tbk","Process Industries"],["BMAS","PT Bank Kasikorn Indonesia Tbk","Finance"],["BTPS","PT Bank BTPN Syariah Tbk","Finance"],["BJTM","PT Bank Pembangunan Daerah Jawa Timur Tbk Class B","Finance"],["ARTO","PT Bank Jago Tbk","Finance"],["INPP","PT Indonesian Paradise Property Tbk","Consumer Services"],["CLAY","PT Citra Putra Realty Tbk","Consumer Services"],["TMAS","PT Temas Tbk","Transportation"],["VICI","PT Victoria Care Indonesia Tbk","Consumer Non-Durables"],["TLDN","PT Teladan Prima Agro Tbk","Process Industries"],["HRTA","PT Hartadinata Abadi Tbk","Consumer Durables"],["MBSS","PT Mitrabahtera Segara Sejati Tbk","Transportation"],["ABMM","PT ABM Investama Tbk","Energy Minerals"],["BOGA","PT Apollo Global Interactive Tbk","Retail Trade"],["NATO","PT Olympus Strategic Indonesia Tbk","Consumer Services"],["RMKE","PT RMK Energy Tbk","Distribution Services"],["BKSL","PT Sentul City Tbk","Finance"],["BIKE","PT Bhineka Inovasi Ketahanan Energi Tbk","Distribution Services"],["EPMT","PT Enseval Putera Megatrading Tbk","Distribution Services"],["BBKP","PT Bank KB Indonesia Tbk Class B","Finance"],["MSIN","PT MNC Digital Entertainment Tbk","Consumer Services"],["SMDR","PT Samudera Indonesia Tbk","Transportation"],["RATU","PT Raharja Energi Cepu Tbk","Miscellaneous"],["CNMA","PT Nusantara Sejahtera Raya Tbk","Consumer Services"],["MTDL","PT Metrodata Electronics Tbk","Electronic Technology"],["SHIP","PT Sillo Maritime Perdana Tbk","Transportation"],["ACES","PT Aspirasi Hidup Indonesia Tbk","Retail Trade"],["UNIC","PT Unggul Indah Cahaya Tbk","Consumer Non-Durables"],["YULE","PT Yulie Sekuritas Indonesia Tbk","Finance"],["BALI","PT Bali Towerindo Sentra Tbk","Industrial Services"],["PNLF","PT Panin Financial Tbk","Commercial Services"],["SSIA","PT Surya Semesta Internusa Tbk","Industrial Services"],["MTLA","PT Metropolitan Land Tbk","Finance"],["OMED","PT Jayamas Medica Industri Tbk","Health Technology"],["CYBR","PT ITSEC Asia Tbk","Technology Services"],["FORE","PT Fore Kopi Indonesia Tbk","Consumer Services"],["BIPI","PT Astrindo Nusantara Infrastruktur Tbk","Energy Minerals"],["WIFI","PT Solusi Sinergi Digital Tbk","Technology Services"],["DMND","PT Diamond Food Indonesia Tbk","Consumer Non-Durables"],["TOTL","PT Total Bangun Persada Tbk","Industrial Services"],["TUGU","PT Asuransi Tugu Pratama Indonesia Tbk","Finance"],["GMFI","PT Garuda Maintenance Facility Aero Asia Tbk","Transportation"],["APIC","PT Pacific Strategic Financial Tbk Class A","Finance"],["COIN","PT Indokripto Koin Semesta Tbk","Miscellaneous"],["ELSA","PT Elnusa Tbk","Energy Minerals"],["DRMA","PT Dharma Polimetal Tbk","Producer Manufacturing"],["TRIM","PT Trimegah Sekuritas Indonesia Tbk","Finance"],["UNSP","PT Bakrie Sumatera Plantations Tbk","Distribution Services"],["PBID","PT Panca Budi Idaman Tbk","Process Industries"],["MPMX","PT Mitra Pinasthika Mustika Tbk","Distribution Services"],["TGKA","PT Tigaraksa Satria Tbk","Distribution Services"],["MAYA","PT Bank Mayapada Internasional Tbk Class A","Finance"],["SURE","PT Super Energy Tbk","Energy Minerals"],["GGRP","PT Gunung Raja Paksi Tbk","Non-Energy Minerals"],["ANJT","PT Austindo Nusantara Jaya Tbk","Process Industries"],["MARK","PT Mark Dynamics Indonesia Tbk","Non-Energy Minerals"],["SAME","PT Sarana Meditama Metropolitan Tbk","Health Services"],["BPII","PT Batavia Prosperindo Internasional Tbk","Commercial Services"],["SMRA","PT Summarecon Agung Tbk","Finance"],["GJTL","PT Gajah Tunggal Tbk","Consumer Durables"],["ARKO","PT Arkora Hydro Tbk","Industrial Services"],["MASB","PT Bank Multiarta Sentosa Tbk","Finance"],["ELPI","PT Pelayaran Nasional Ekalya Purnamasari Tbk","Transportation"],["HATM","PT Habco Trans Maritima Tbk","Transportation"],["ARGO","PT Argo Pantes Tbk","Process Industries"],["ALDO","PT Alkindo Naratama Tbk","Process Industries"],["CASS","PT Cahaya Aero Services Tbk","Transportation"],["BULL","PT Buana Lintas Lautan Tbk","Transportation"],["MSTI","PT Mastersystem Infotama Tbk","Technology Services"],["JTPE","PT Jasuindo Tiga Perkasa Tbk","Commercial Services"],["BIRD","PT Blue Bird Tbk","Transportation"],["SOCI","PT Soechi Lines Tbk","Transportation"],["ARNA","PT Arwana Citramulia Tbk","Producer Manufacturing"],["JECX","PT Nitrasanata Dharma Tbk","Health Services"],["INET","PT Sinergi Inti Andalan Prima Tbk","Communications"],["PALM","PT Provident Investasi Bersama Tbk","Process Industries"],["LPPF","PT MDS Retailing Tbk Class A","Retail Trade"],["PSGO","PT Palma Serasih Tbk.","Consumer Non-Durables"],["TOBA","PT TBS Energi Utama Tbk","Industrial Services"],["MSJA","PT Multi Spunindo Jaya Tbk","Process Industries"],["AMAR","PT Bank Amar Indonesia Tbk","Finance"],["SMIL","PT Sarana Mitra Luas Tbk","Finance"],["FILM","PT MD Entertainment Tbk","Consumer Services"],["MKAP","PT Multikarya Asia Pasifik Raya Tbk","Producer Manufacturing"],["PRDA","PT Prodia Widyahusada Tbk","Health Services"],["MMIX","PT Multi Medika Internasional Tbk","Distribution Services"],["CBUT","PT Citra Borneo Utama Tbk","Consumer Non-Durables"],["DKFT","PT Central Omega Resources Tbk","Non-Energy Minerals"],["KEJU","PT Mulia Boga Raya Tbk","Consumer Non-Durables"],["RDTX","PT Roda Vivatex Tbk","Finance"],["KRAS","PT Krakatau Steel (Persero) Tbk Class B","Non-Energy Minerals"],["ASGR","PT Astra Graphia Tbk","Technology Services"],["TBLA","PT Tunas Baru Lampung Tbk","Process Industries"],["WIIM","PT Wismilak Inti Makmur Tbk","Consumer Non-Durables"],["ABDA","PT Asuransi Bina Dana Arta Tbk Class A","Finance"],["ISSP","PT Steel Pipe Industry of Indonesia Tbk","Non-Energy Minerals"],["NIRO","PT City Retail Developments Tbk","Finance"],["ROTI","PT Nippon Indosari Corpindo Tbk","Consumer Non-Durables"],["LPKR","PT Lippo Karawaci Tbk","Finance"],["IMAS","PT Indomobil Sukses Internasional Tbk","Consumer Durables"],["LINK","PT Link Net Tbk","Communications"],["MDIA","PT Intermedia Capital Tbk","Consumer Services"],["KEEN","PT Kencana Energi Lestari Tbk","Utilities"],["BEEF","PT Estika Tata Tiara Tbk","Consumer Non-Durables"],["JSPT","PT Jakarta Setiabudi Internasional Tbk","Consumer Services"],["NOBU","PT Bank Nationalnobu Tbk","Finance"],["KPIG","PT MNC Tourism Indonesia Tbk","Finance"],["DAYA","PT Duta Intidaya Tbk","Retail Trade"],["DAAZ","PT Daaz Bara Lestari Tbk","Distribution Services"],["VICO","PT Victoria Investama Tbk","Finance"],["SAMF","PT Saraswanti Anugerah Makmur Tbk","Process Industries"],["AGRO","PT Bank Raya Indonesia Tbk","Finance"],["ROCK","PT Rockfields Properti Indonesia Tbk","Finance"],["OMRE","PT Indonesia Prima Property Tbk","Consumer Services"],["BLTZ","PT Graha Layar Prima Tbk Class C","Consumer Services"],["MDLA","PT Medela Potentia Tbk","Distribution Services"],["SFAN","PT Surya Fajar Capital Tbk","Finance"],["TRUK","PT Guna Timur Raya Tbk","Transportation"],["HEXA","PT Hexindo Adiperkasa Tbk","Distribution Services"],["NEST","PT Esta Indonesia Tbk","Process Industries"],["CBRE","PT Cakra Buana Resources Energi Tbk","Transportation"],["BANK","PT Bank Aladin Syariah Tbk","Finance"],["SDRA","PT Bank Woori Saudara Indonesia 1906 Tbk","Finance"],["IATA","PT Karya Pacific Energy Tbk","Distribution Services"],["BWPT","PT Eagle High Plantations Tbk.","Process Industries"],["LPCK","PT Lippo Cikarang Tbk","Finance"],["PORT","PT Nusantara Pelabuhan Handal Tbk","Transportation"],["MGRO","PT Mahkota Group Tbk","Process Industries"],["PNGO","PT AEP Pinago Plantations Tbk","Process Industries"],["AGRS","PT Bank IBK Indonesia Tbk","Finance"],["WINS","PT Wintermar Offshore Marine Tbk","Transportation"],["TOTO","PT Surya Toto Indonesia Tbk","Producer Manufacturing"],["MAPB","PT Map Boga Adiperkasa Tbk","Consumer Services"],["RALS","PT Ramayana Lestari Sentosa Tbk","Retail Trade"],["NICL","PT PAM Mineral Tbk","Non-Energy Minerals"],["GOLF","PT Intra Golflink Resorts Tbk","Commercial Services"],["INPC","PT Bank Artha Graha Internasional Tbk","Finance"],["EURO","PT Estee Gold Feet Tbk","Consumer Non-Durables"],["BNBA","PT Bank Bumi Arta Tbk","Finance"],["KIJA","PT Kawasan Industri Jababeka Tbk Class A","Finance"],["FISH","PT FKS Multi Agro Tbk","Consumer Non-Durables"],["BESS","PT Batulicin Nusantara Maritim Tbk","Transportation"],["BUKK","PT Bukaka Teknik Utama Tbk","Producer Manufacturing"],["PNIN","PT Paninvest Tbk","Consumer Services"],["UANG","PT Pakuan Tbk","Finance"],["ALKA","PT Alakasa Industrindo, Tbk Class A","Non-Energy Minerals"],["SKRN","PT Superkrane Mitra Utama","Finance"],["CENT","PT Centratama Telekomunikasi Indonesia Tbk","Communications"],["VISI","PT Satu Visi Putra Tbk","Distribution Services"],["TEBE","PT Dana Brata Luhur Tbk","Industrial Services"],["MCOR","PT Bank China Construction Bank Indonesia Tbk","Finance"],["SMDM","PT Suryamas Dutamakmur Tbk","Finance"],["IFSH","PT Ifishdeco Tbk","Non-Energy Minerals"],["MAHA","PT Mandiri Herindo Adiperkasa Tbk","Energy Minerals"],["BGTG","PT Bank Ganesha Tbk","Finance"],["FPNI","PT Lotte Chemical Titan Tbk","Process Industries"],["CPRO","PT Central Proteina Prima Tbk","Process Industries"],["MBAP","PT Mitrabara Adiperdana Tbk","Energy Minerals"],["SCCO","PT Supreme Cable Manufacturing & Commerce Tbk","Producer Manufacturing"],["BRAM","PT Indo Kordsa Tbk","Process Industries"],["CTBN","PT Citra Tubindo Tbk","Industrial Services"],["KAEF","PT Kimia Farma (Persero) Tbk Class B","Health Technology"],["MYOH","PT Samindo Resources Tbk","Energy Minerals"],["PTSN","PT Sat Nusapersada Tbk","Electronic Technology"],["BISI","PT BISI International Tbk","Process Industries"],["PMJS","PT Putra Mandiri Jembar Tbk","Retail Trade"],["AYAM","PT Janu Putra Sejahtera Tbk","Process Industries"],["ASRI","PT Alam Sutera Realty Tbk","Finance"],["KINO","PT Kino Indonesia Tbk","Consumer Non-Durables"],["AMAG","PT Asuransi Multi Artha Guna Tbk","Finance"],["ASSA","PT Adi Sarana Armada Tbk","Transportation"],["APLN","PT Agung Podomoro Land Tbk","Finance"],["IPCC","PT Indonesia Kendaraan Terminal Tbk","Transportation"],["IFII","PT Indonesia Fibreboard Industry Tbk","Non-Energy Minerals"],["BCIC","PT Bank JTrust Indonesia Tbk","Finance"],["BBYB","PT Bank Neo Commerce Tbk","Finance"],["PSSI","PT IMC Pelita Logistik Tbk","Transportation"],["UCID","PT Uni-Charm Indonesia Tbk","Consumer Non-Durables"],["BACA","PT Bank Capital Indonesia Tbk","Finance"],["INDR","PT Indo-Rama Synthetics Tbk","Process Industries"],["LPGI","PT Lippo General Insurance Tbk","Finance"],["BOLT","PT Garuda Metalindo Tbk","Producer Manufacturing"],["BLES","PT Superior Prima Sukses Tbk","Non-Energy Minerals"],["KMTR","PT Kirana Megatara Tbk","Producer Manufacturing"],["DVLA","PT Darya-Varia Laboratoria Tbk","Health Technology"],["ARII","PT Atlas Resources Tbk","Energy Minerals"],["JAWA","PT Jaya Agra Wattie Tbk","Process Industries"],["PBSA","PT Paramita Bangun Sarana Tbk","Industrial Services"],["ASLI","PT Asri Karya Lestari Tbk","Industrial Services"],["PSKT","PT Red Planet Indonesia Tbk","Consumer Services"],["NICE","PT Adhi Kartiko Pratama Tbk","Non-Energy Minerals"],["DNAR","PT Bank Oke Indonesia Tbk","Finance"],["MTMH","PT Murni Sadar Tbk","Health Services"],["BMHS","PT Bundamedik Tbk","Health Services"],["DOOH","PT Era Media Sejahtera Tbk","Commercial Services"],["NICK","PT Charnic Capital Tbk","Finance"],["MERK","PT Merck Tbk","Health Technology"],["BKSW","PT Bank QNB Indonesia Tbk","Finance"],["SPTO","PT Surya Pertiwi Tbk","Distribution Services"],["PYFA","PT Pyridam Farma Tbk","Health Technology"],["ERAL","PT Sinar Eka Selaras Tbk","Retail Trade"],["FAST","PT Fast Food Indonesia Tbk","Consumer Services"],["MMLP","PT Mega Manunggal Property Tbk","Finance"],["IMJS","PT Indomobil Multi Jasa Tbk","Finance"],["DGWG","PT Delta Giri Wacana Tbk","Process Industries"],["RONY","PT Aracord Nusantara Group Tbk","Industrial Services"],["FMII","PT Fortune Mate Indonesia Tbk","Finance"],["SONA","PT Sona Topas Tourism Industry Tbk","Retail Trade"],["DWGL","PT Dwi Guna Laksana Tbk","Energy Minerals"],["CSAP","PT Catur Sentosa Adiprana Tbk","Distribution Services"],["PNBS","PT Bank Panin Dubai Syariah Tbk","Finance"],["INDS","PT Indospring Tbk","Producer Manufacturing"],["DEPO","PT Caturkarda Depo Bangunan Tbk","Retail Trade"],["HUMI","PT Humpuss Maritim Internasional Tbk","Transportation"],["STAR","PT Calculus Global Ventures Tbk","Finance"],["RANS","PT Rans Entertainmen Indonesia Tbk","Commercial Services"],["TRST","PT Trias Sentosa, Tbk","Process Industries"],["MINA","PT Sanurhasta Mitra Tbk.","Consumer Services"],["LTLS","PT Lautan Luas Tbk","Distribution Services"],["KETR","PT Ketrosden Triasmitra Tbk","Industrial Services"],["MKTR","PT Menthobi Karyatama Raya Tbk","Commercial Services"],["TPMA","PT Trans Power Marine Tbk","Transportation"],["DLTA","PT Delta Djakarta Tbk","Consumer Non-Durables"],["IPCM","PT Jasa Armada Indonesia Tbk","Transportation"],["CFIN","PT Clipan Finance Indonesia Tbk","Finance"],["POLI","PT Pollux Hotels Group Tbk","Consumer Durables"],["BHIT","PT MNC Asia Holding Tbk","Consumer Services"],["SUNI","PT Sunindo Pratama Tbk","Energy Minerals"],["KKGI","PT Resource Alam Indonesia Tbk","Energy Minerals"],["IRSX","PT Folago Global Nusantara Tbk","Technology Services"],["DATA","PT Remala Abadi Tbk","Communications"],["CSRA","PT Cisadane Sawit Raya Tbk","Process Industries"],["CEKA","PT Wilmar Cahaya Indonesia Tbk","Consumer Non-Durables"],["BVIC","PT Bank Victoria International Tbk","Finance"],["AGAR","PT Asia Sejahtera Mina Tbk","Distribution Services"],["AMFG","PT Asahimas Flat Glass Tbk","Process Industries"],["BEKS","PT Bank Pembangunan Daerah Banten (Perseroda) Tbk Class A","Finance"],["KBLI","PT KMI Wire & Cable Tbk Class A","Producer Manufacturing"],["CARS","PT Industri dan Perdagangan Bintraco Dharma Tbk","Retail Trade"],["ACST","PT Acset Indonusa Tbk","Industrial Services"],["MAIN","PT Malindo Feedmill Tbk","Process Industries"],["HERO","PT DFI Retail Nusantara Tbk","Retail Trade"],["SMBR","PT Semen Baturaja (Persero) Tbk Class B","Non-Energy Minerals"],["RSCH","PT Charlie Hospital Semarang Tbk","Health Services"],["JKON","PT Jaya Konstruksi Manggala Pratama Tbk","Industrial Services"],["ATIC","PT Anabatic Technologies Tbk","Technology Services"],["TRGU","PT Cerestar Indonesia Tbk","Process Industries"],["SKLT","PT Sekar Laut Tbk","Consumer Non-Durables"],["MLIA","PT Mulia Industrindo Tbk","Process Industries"],["MPPA","PT Matahari Putra Prima Tbk","Retail Trade"],["STRK","PT Lovina Beach Brewery Tbk","Consumer Non-Durables"],["GTSI","PT GTS Internasional","Transportation"],["COCO","PT Wahana Interfood Nusantara Tbk","Consumer Non-Durables"],["PANS","PT Panin Sekuritas Tbk","Finance"],["SIPD","PT Sreeya Sewu Indonesia Tbk Class A","Process Industries"],["NFCX","PT NFC Indonesia Tbk","Technology Services"],["DOID","PT BUMA Internasional Grup Tbk","Energy Minerals"],["NETV","PT MDTV Media Technologies Tbk","Commercial Services"],["PSAT","PT Pancaran Samudera Transport Tbk","Transportation"],["OASA","PT Maharaksa Biru Energi Tbk","Commercial Services"],["EKAD","PT Ekadharma International Tbk","Process Industries"],["BKDP","PT Bukit Darmo Property Tbk","Finance"],["SQMI","PT Wilton Makmur Indonesia Tbk","Non-Energy Minerals"],["ARTA","PT Arthavest Tbk","Consumer Services"],["ITMA","PT Sumber Energi Andalan Tbk","Energy Minerals"],["GSMF","PT Equity Development Investment Tbk Class A","Finance"],["BLOG","PT Trimitra Trans Persada Tbk","Transportation"],["TIFA","PT KDB Tifa Finance Tbk","Finance"],["DILD","PT Intiland Development Tbk","Finance"],["BEST","PT Bekasi Fajar Industrial Estate Tbk","Industrial Services"],["BABP","PT Bank MNC Internasional Tbk","Finance"],["BBLD","PT Buana Finance Tbk","Finance"],["NRCA","PT Nusa Raya Cipta Tbk","Industrial Services"],["DMMX","PT Digital Mediatama Maxima Tbk","Commercial Services"],["TCID","PT Mandom Indonesia Tbk","Consumer Non-Durables"],["MINE","PT Sinar Terang Mandiri TBK","Non-Energy Minerals"],["BLUE","PT Berkah Prima Perkasa Tbk","Distribution Services"],["GWSA","PT Greenwood Sejahtera Tbk","Finance"],["WOOD","PT Integra Indocabinet Tbk","Consumer Durables"],["WOMF","PT Wahana Ottomitra Multiartha Tbk","Finance"],["MOLI","PT Madusari Murni Indah Tbk","Process Industries"],["MNCN","PT Media Nusantara Citra Tbk","Commercial Services"],["MLPL","PT Multipolar Tbk Class A","Retail Trade"],["PDPP","PT Primadaya Plastisindo Tbk","Process Industries"],["BUDI","PT Budi Starch & Sweetener Tbk","Process Industries"],["BACH","PT Bach Multi Global Tbk","Distribution Services"],["GRIA","PT Ingria Pratama Capitalindo Tbk","Finance"],["BUAH","PT Segar Kumala Indonesia Tbk","Distribution Services"],["BMTR","PT Global Mediacom Tbk","Consumer Services"],["RSGK","PT Kedoya Adyaraya Tbk","Health Services"],["ELTY","PT Bakrieland Development Tbk Class A","Finance"],["BSBK","PT Wulandari Bangun Laksana Tbk","Finance"],["MITI","PT Mitra Investindo Tbk Class A","Transportation"],["VOKS","PT Voksel Electric Tbk","Producer Manufacturing"],["PTPW","PT Pratama Widya Tbk","Industrial Services"],["BOLA","PT Bali Bintang Sejahtera Tbk","Consumer Services"],["BSML","PT Bintang Samudera Mandiri Lines Tbk","Transportation"],["AISA","PT FKS Food Sejahtera Tbk Class A","Consumer Non-Durables"],["RELI","PT Reliance Sekuritas Indonesia Tbk","Finance"],["LFLO","PT Imago Mulia Persada Tbk","Commercial Services"],["GHON","PT Gihon Telekomunikasi Indonesia","Communications"],["PPRO","PT PP Properti Tbk","Finance"],["SKBM","PT Sekar Bumi Tbk","Consumer Non-Durables"],["FUTR","PT Futura Energi Global Tbk","Commercial Services"],["HGII","PT Hero Global Investment Tbk","Utilities"],["VERN","PT Verona Indah Pictures Tbk","Consumer Services"],["KOTA","PT DMS Propertindo Tbk","Finance"],["GMTD","PT Gowa Makassar Tourism Development Tbk","Finance"],["TAMU","PT Pelayaran Tamarin Samudra Tbk","Transportation"],["CAMP","PT Campina Ice Cream Industry Tbk","Consumer Non-Durables"],["IPTV","PT MNC Vision Networks Tbk Class A","Consumer Services"],["ADMG","PT Polychem Indonesia Tbk","Process Industries"],["BCAP","PT MNC Kapital Indonesia Tbk","Finance"],["SPMA","PT Suparma Tbk","Process Industries"],["GULA","PT Aman Agrindo Tbk","Process Industries"],["TALF","PT Tunas Alfin Tbk","Process Industries"],["RANC","PT Supra Boga Lestari Tbk","Retail Trade"],["KING","PT Hoffmen Cleanindo Tbk","Commercial Services"],["BLTA","PT Berlian Laju Tanker Tbk","Transportation"],["BBRM","PT Pelayaran Nasional Bina Buana Raya Tbk","Transportation"],["TBMS","PT Tembaga Mulia Semanan Tbk","Producer Manufacturing"],["AMOR","PT Ashmore Asset Management Indonesia Tbk","Finance"],["RAAM","PT Tripar Multivision Plus Tbk","Consumer Services"],["DGIK","PT Nusa Konstruksi Enjiniring Tbk","Industrial Services"],["JIHD","PT Jakarta International Hotels & Development Tbk","Finance"],["AXIO","PT Tera Data Indonusa Tbk","Electronic Technology"],["GDST","PT Gunawan Dianjaya Steel Tbk","Non-Energy Minerals"],["KSIX","PT Kentanix Supra International Tbk","Consumer Durables"],["BDKR","PT Berdikari Pondasi Perkasa Tbk","Industrial Services"],["AMAN","PT Makmur Berkah Amanda Tbk","Finance"],["JGLE","PT Graha Andrasentra Propertindo Tbk","Finance"],["SHID","PT Hotel Sahid Jaya International Tbk","Consumer Services"],["BRNA","PT Berlina Tbk","Process Industries"],["MTWI","PT Malacca Trust Wuwungan Insurance Tbk","Finance"],["KDSI","PT Kedawung Setia Industrial Tbk","Process Industries"],["YPAS","PT Yanaprima Hastapersada Tbk","Process Industries"],["IPOL","PT Indopoly Swakarsa Industry Tbk","Process Industries"],["GZCO","PT Gozco Plantations Tbk","Process Industries"],["PPRE","PT PP Presisi Tbk","Industrial Services"],["CBPE","PT Citra Buana Prasida Tbk","Finance"],["URBN","PT Urban Jakarta Propertindo Tbk","Finance"],["SOSS","PT ALSOK Indonesia Services Tbk","Commercial Services"],["BPFI","PT Woori Finance Indonesia Tbk","Finance"],["CITY","PT Natura City Developments Tbk","Finance"],["WMPP","PT Widodo Makmur Perkasa Tbk","Process Industries"],["PJAA","PT Pembangunan Jaya Ancol Tbk","Consumer Services"],["SRSN","PT Indo Acidatama Tbk","Consumer Non-Durables"],["IKBI","PT Sumi Indo Kabel Tbk","Electronic Technology"],["INDO","PT Royalindo Investa Wijaya Tbk","Finance"],["SMGA","PT Sumber Mineral Global Abadi Tbk","Distribution Services"],["HDFA","PT Radana Bhaskara Finance Tbk","Finance"],["SMLE","PT Sinergi Multi Lestarindo Tbk","Distribution Services"],["MPXL","PT MPX Logistics International Tbk","Transportation"],["AREA","PT Dunia Virtual Online Tbk","Technology Services"],["PEVE","PT Penta Valent Tbk","Distribution Services"],["ZONE","PT Mega Perintis Tbk","Consumer Non-Durables"],["PGJO","PT Bahtera Bumi Raya Tbk","Technology Services"],["ASLC","PT Autopedia Sukses Lestari Tbk","Distribution Services"],["SEMA","PT Semacom Integrated Tbk","Producer Manufacturing"],["PTSP","PT Pioneerindo Gourmet International Tbk","Consumer Services"],["GTRA","PT Grahaprima Suksesmandiri Tbk","Transportation"],["WTON","PT Wijaya Karya Beton Tbk","Industrial Services"],["SAFE","PT Steady Safe Tbk","Transportation"],["ATAP","PT Trimitra Prawara Goldland Tbk","Finance"],["IBOS","PT Indo Boga Sukses Tbk","Consumer Services"],["IRRA","PT Itama Ranoraya Tbk","Distribution Services"],["GUNA","PT Gunanusa Eramandiri Tbk","Consumer Non-Durables"],["SOTS","PT Satria Mega Kencana Tbk","Consumer Services"],["ASPI","PT Andalan Sakti Primaindo Tbk","Finance"],["APEX","PT Apexindo Pratama Duta Tbk","Industrial Services"],["LIVE","PT Homeco Victoria Makmur Tbk","Distribution Services"],["BTEK","PT Bumi Teknokultura Unggul Tbk","Process Industries"],["BELL","PT Trisula Textile Industries Tbk","Consumer Non-Durables"],["TRIN","PT Perintis Triniti Properti Tbk","Finance"],["AWAN","PT Era Digital Media Tbk","Technology Services"],["LABS","PT UBC Medical Indonesia Tbk","Distribution Services"],["PZZA","PT Sarimelati Kencana Tbk","Consumer Services"],["TRIS","PT Trisula International Tbk","Consumer Non-Durables"],["KONI","PT Perdana Bangun Pusaka Tbk","Retail Trade"],["JECC","PT Jembo Cable Co. Tbk","Producer Manufacturing"],["UDNG","PT Agro Bahari Nusantara Tbk","Process Industries"],["SWID","PT Saraswanti Indoland Development Tbk","Finance"],["WIRG","PT WIR Asia Tbk","Health Services"],["VIVA","PT Visi Media Asia Tbk Class A","Consumer Services"],["PBRX","PT Pan Brothers Tbk","Process Industries"],["PANR","PT Panorama Sentrawisata Tbk","Consumer Services"],["SMKL","PT Satyamitra Kemas Lestari Tbk","Process Industries"],["AKKU","PT Anugerah Kagum Karya Utama Tbk","Consumer Services"],["MDKI","PT Emdeki Utama Tbk","Process Industries"],["GLVA","PT Galva Technologies Tbk","Distribution Services"],["MGNA","PT Magna Investama Mandiri Tbk","Finance"],["IDPR","PT Indonesia Pondasi Raya Tbk","Industrial Services"],["CLPI","PT Colorpak Indonesia Tbk","Process Industries"],["DEWI","PT Dewi Shri Farmindo Tbk","Retail Trade"],["BABY","PT Multitrend Indo Tbk","Retail Trade"],["PMUI","PT Prima Multi Usaha Indonesia Tbk","Distribution Services"],["UNIQ","PT Ulima Nitra Tbk","Industrial Services"],["BAJA","PT Saranacentral Bajatama Tbk","Non-Energy Minerals"],["CASH","PT.Cashlez Worldwide Indonesia Tbk","Technology Services"],["GDYR","PT Goodyear Indonesia Tbk","Consumer Durables"],["RODA","PT Pikko Land Development Tbk","Consumer Durables"],["HYGN","PT Ecocare Indo Pasifik Tbk","Commercial Services"],["SURI","PT Maja Agung Latexindo Tbk","Consumer Non-Durables"],["PEGE","PT Panca Global Kapital Tbk","Finance"],["HAIS","PT Hasnur Internasional Shipping Tbk","Transportation"],["BAYU","PT Bayu Buana Tbk","Consumer Services"],["DPUM","PT Dua Putra Utama Makmur Tbk","Distribution Services"],["SSTM","PT Sunson Textile Manufacturer Tbk","Process Industries"],["LEAD","PT Logindo Samudramakmur Tbk","Industrial Services"],["NELY","PT Pelayaran Nelly Dwi Putri Tbk","Transportation"],["GTBO","PT Garda Tujuh Buana Tbk","Energy Minerals"],["SULI","PT SLJ Global Tbk","Non-Energy Minerals"],["PRIM","PT Royal Prima Tbk","Health Services"],["CHEK","PT Diastika Biotekindo Tbk","Health Technology"],["PADI","PT Minna Padi Investama Sekuritas Tbk","Finance"],["PNSE","PT Pudjiadi & Sons Tbk","Consumer Services"],["UNTD","PT Terang Dunia Internusa Tbk","Consumer Durables"],["MDLN","PT Modernland Realty Tbk Class A","Finance"],["HOPE","PT Harapan Duta Pertiwi Tbk","Producer Manufacturing"],["VRNA","PT Mizuho Leasing Indonesia Tbk","Finance"],["DART","PT Duta Anggada Realty Tbk","Consumer Durables"],["KMDS","PT Kurniamitra Duta Sentosa Tbk","Distribution Services"],["GPRA","PT Perdana Gapuraprima Tbk","Consumer Durables"],["WMUU","PT Widodo Makmur Unggas Tbk","Process Industries"],["SCNP","PT Selaras Citra Nusantara Perkasa Tbk","Consumer Durables"],["ASPR","PT Asia Pramulia Tbk","Producer Manufacturing"],["DGNS","PT Diagnos Laboratorium Utama Tbk","Health Services"],["ENAK","PT Champ Resto Indonesia Tbk","Consumer Services"],["NIKL","PT Pelat Timah Nusantara Tbk","Process Industries"],["CRAB","PT Toba Surimi Industries Tbk","Consumer Non-Durables"],["KBLM","PT Kabelindo Murni Tbk Class A","Producer Manufacturing"],["ESTA","PT Esta Multi Usaha Tbk","Consumer Services"],["ELIT","PT Data Sinergitama Jaya Tbk","Technology Services"],["UVCR","PT Trimegah Karya Pratama Tbk","Technology Services"],["KOKA","PT Koka Indonesia Tbk","Industrial Services"],["BOAT","PT Newport Marine Services Tbk","Transportation"],["MHKI","PT Multi Hanna Kreasindo Tbk","Industrial Services"],["HOKI","PT Buyung Poetra Sembada Tbk","Process Industries"],["RIGS","PT Rig Tenders Indonesia Tbk","Transportation"],["AHAP","PT Asuransi Harta Aman Pratama Tbk","Finance"],["FITT","PT Fortune Resources Investment Tbk","Consumer Services"],["EAST","PT Eastparc Hotel Tbk","Consumer Services"],["UFOE","PT Damai Sejahtera Abadi Tbk","Retail Trade"],["MUTU","PT Mutuagung Lestari Tbk","Commercial Services"],["APLI","PT Asiaplast Industries Tbk","Process Industries"],["CHIP","PT Pelita Teknologi Global Tbk","Technology Services"],["BMSR","PT Bintang Mitra Semestaraya Tbk","Distribution Services"],["CCSI","PT Communication Cable Systems Indonesia Tbk","Producer Manufacturing"],["ZATA","PT Bersama Zatta Jaya Tbk","Retail Trade"],["HALO","PT Haloni Jane Tbk","Producer Manufacturing"],["TRUS","PT Trust Finance Indonesia Tbk","Finance"],["KDTN","PT Puri Sentul Permai Tbk","Consumer Services"],["TARA","PT Agung Semesta Sejahtera Tbk","Finance"],["NASA","PT Andalan Perkasa Abadi Tbk","Finance"],["DKHH","Pt Cipta Sarana Medika Tbk.","Health Services"],["KOBX","PT Kobexindo Tractors Tbk","Distribution Services"],["WINE","PT Hatten Bali Tbk","Consumer Non-Durables"],["PART","PT Cipta Perdana Lancar Tbk","Producer Manufacturing"],["TYRE","PT King Tire Indonesia Tbk","Consumer Durables"],["AKPI","PT Argha Karya Prima Industry Tbk","Process Industries"],["KOCI","PT Kokoh Exa Nusantara Tbk","Finance"],["GOLD","PT Visi Telekomunikasi Infrastruktur Tbk","Finance"],["PADA","PT Personel Alih Daya Tbk","Commercial Services"],["CRSN","PT Carsurin Tbk","Commercial Services"],["DYAN","PT Dyandra Media International Tbk","Commercial Services"],["VAST","PT Vastland Indonesia Tbk","Finance"],["TOSK","PT Topindo Solusi Komunika Tbk","Technology Services"],["FUJI","PT Fuji Finance Indonesia Tbk.","Finance"],["SATU","PT Kota Satu Properti Tbk","Finance"],["BIPP","PT Bhuwanatala Indah Permai Tbk Class A","Finance"],["KREN","PT Quantum Clovera Investama Tbk","Finance"],["ANDI","PT Andira Agro Tbk","Process Industries"],["PTPS","PT Pulau Subur Tbk","Process Industries"],["HOMI","PT Grand House Mulia Tbk","Finance"],["FOLK","PT Multi Garam Utama Tbk","Distribution Services"],["WEGE","PT Wijaya Karya Bangunan Gedung Tbk","Industrial Services"],["MPIX","PT Mitra Pedagang Indonesia Tbk","Commercial Services"],["RMKO","PT Royaltama Mulia Kontraktorindo Tbk","Energy Minerals"],["POLA","PT Pool Advista Finance Tbk","Finance"],["MICE","PT Multi Indocitra Tbk","Distribution Services"],["INOV","PT Inocycle Technology Group Tbk","Process Industries"],["CSIS","PT Cahayasakti Investindo Sukses Tbk","Finance"],["JATI","PT Informasi Teknologi Indonesia Tbk","Technology Services"],["HAJJ","PT Arsy Buana Travelindo Tbk","Consumer Services"],["SDPC","PT Millennium Pharmacon International Tbk","Distribution Services"],["DOSS","PT Global Sukses Digital Tbk","Retail Trade"],["VTNY","PT Venteny Fortuna International Tbk","Technology Services"],["ASRM","PT Asuransi Ramayana Tbk","Finance"],["YOII","PT Asuransi Digital Bersama Tbk","Finance"],["BTON","PT Betonjaya Manunggal Tbk","Non-Energy Minerals"],["KLAS","PT Pelayaran Kurnia Lautan Semesta Tbk","Transportation"],["TFAS","PT Telefast Indonesia Tbk","Technology Services"],["TRUE","PT Triniti Dinamik Tbk","Finance"],["AMIN","PT Ateliers Mecaniques D'Indonesie Tbk","Producer Manufacturing"],["BBSS","PT Bumi Benowo Sukses Sejahtera Tbk","Industrial Services"],["IKAI","PT Intikeramik Alamasri Industri Tbk","Producer Manufacturing"],["SOFA","PT Solusi Environment Asia Tbk","Non-Energy Minerals"],["MEJA","PT Harta Djaya Karya Tbk","Commercial Services"],["PDES","PT Destinasi Tirta Nusantara Tbk","Consumer Services"],["IKPM","PT Ikapharmindo Putramas Tbk","Health Technology"],["ESTI","PT Ever Shine Textile Tbk","Process Industries"],["ASMI","PT Asuransi Maximus Graha Persada Tbk","Finance"],["KBAG","PT Karya Bersama Anugerah Tbk","Finance"],["NZIA","PT Nusantara Almazia Tbk","Finance"],["CGAS","PT Citra Nusantara Gemilang Tbk","Utilities"],["OKAS","PT Ancora Indonesia Resources Tbk","Non-Energy Minerals"],["SAPX","PT Satria Antaran Prima Tbk","Transportation"],["SAGE","PT Saptausaha Gemilangindah Tbk","Finance"],["NAIK","PT Adiwarna Anugerah Abadi Tbk","Commercial Services"],["LAPD","PT Leyand International Tbk","Utilities"],["PEHA","PT Phapros Tbk","Distribution Services"],["LPLI","PT Star Pacific Tbk Class A","Technology Services"],["ASJT","PT Asuransi Jasa Tania Tbk","Finance"],["REAL","PT Repower Asia Indonesia Tbk","Finance"],["BPTR","PT Batavia Prosperindo Trans Tbk","Finance"],["TMPO","PT Tempo Inti Media Tbk","Consumer Services"],["BINO","PT Perma Plasindo Tbk","Producer Manufacturing"],["IDEA","PT Idea Indonesia Akademi Tbk","Commercial Services"],["WAPO","PT Wahana Pronatural Tbk","Consumer Non-Durables"],["PRDL","PT Prodia Diagnostic Line Tbk","Health Technology"],["SOLA","PT Xolare Rcr Energy Tbk","Industrial Services"],["TRON","PT Teknologi Karya Digital Nusa Tbk","Technology Services"],["IOTF","PT Sumber Sinergi Makmur Tbk","Distribution Services"],["MAXI","PT Maxindo Karya Anugerah Tbk","Consumer Non-Durables"],["BEER","PT Jobubu Jarum Minahasa Tbk","Consumer Non-Durables"],["NAYZ","PT Hassana Boga Sejahtera Tbk","Consumer Non-Durables"],["BOBA","PT Formosa Ingredient Factory Tbk","Consumer Non-Durables"],["APII","PT Arita Prima Indonesia Tbk","Producer Manufacturing"],["PURA","PT Putra Rajawali Kencana Tbk","Transportation"],["RELF","PT Graha Mitra Asia Tbk","Finance"],["AKSI","PT Mineral Sumberdaya Mandiri Tbk","Finance"],["ASDM","PT Asuransi Dayin Mitra Tbk","Finance"],["ASHA","PT Cilacap Samudera Fishing Industry Tbk","Process Industries"],["HRME","PT Menteng Heritage Realty Tbk","Consumer Services"],["EMDE","PT Megapolitan Developments Tbk","Finance"],["LUCY","PT Lima Dua Lima Tiga Tbk","Commercial Services"],["CAKK","PT Cahayaputra Asa Keramik Tbk","Consumer Durables"],["XCID","DIRE CIPTADANA PROPERTI RITEL INDONESIA","Finance"],["ERTX","PT Eratex Djaja Tbk","Process Industries"],["LPIN","PT Multi Prima Sejahtera Tbk","Electronic Technology"],["TIRA","PT Tira Austenite Tbk","Distribution Services"],["CINT","PT Chitose Internasional Tbk","Producer Manufacturing"],["VINS","PT Victoria Insurance Tbk","Finance"],["INCI","PT Intanwijaya Internasional Tbk","Process Industries"],["ECII","PT Electronic City Indonesia Tbk","Retail Trade"],["MRAT","PT Mustika Ratu Tbk","Distribution Services"],["OBAT","PT Brigit Biofarmaka Teknologi Tbk","Producer Manufacturing"],["DADA","PT Diamond Citra Propertindo Tbk","Finance"],["ITIC","PT Indonesian Tobacco Tbk","Consumer Non-Durables"],["MCAS","PT M Cash Integrasi Tbk","Technology Services"],["ZYRX","PT Zyrexindo Mandiri Buana Tbk","Electronic Technology"],["AYLS","PT Arkayana Lestari Grup Tbk","Process Industries"],["ACRO","PT Samcro Hyosung Adilestari Tbk Class A","Process Industries"],["INTD","PT Inter-Delta Tbk","Consumer Durables"],["GPSO","PT Geoprima Solusi Tbk","Technology Services"],["EPAC","PT Megalestari Epack Sentosaraya Tbk","Technology Services"],["TRJA","PT Transkon Jaya Tbk","Finance"],["WGSH","PT Wira Global Solusi Tbk","Technology Services"],["HELI","PT Jaya Trishindo Tbk","Transportation"],["FWCT","PT Wijaya Cahaya Timber Tbk","Non-Energy Minerals"],["TAMA","PT Lancartama Sejati Tbk","Consumer Durables"],["LMPI","PT Langgeng Makmur Industri Tbk","Consumer Durables"],["PGLI","PT Pembangunan Graha Lestari Indah Tbk","Consumer Services"],["LPPS","PT Lenox Pasifik InvestamaTbk Class A","Finance"],["GRPM","PT Graha Prima Mentari Tbk","Distribution Services"],["PAMG","PT Bima Sakti Pertiwi Tbk","Finance"],["MANG","PT Manggung Polahraya Tbk","Consumer Durables"],["RUIS","PT Radiant Utama Interinsco Tbk","Industrial Services"],["NPGF","PT Nusa Palapa Gemilang Tbk","Process Industries"],["PUDP","PT Pudjiadi Prestige Tbk Class A","Finance"],["WEHA","PT WEHA Transportasi Indonesia Tbk","Transportation"],["LION","PT Lion Metal Works Tbk","Producer Manufacturing"],["DSFI","PT Dharma Samudera Fishing Industries Tbk","Consumer Non-Durables"],["SLIS","PT Gaya Abadi Sempurna Tbk","Distribution Services"],["DIVA","PT Distribusi Voucher Nusantara Tbk","Technology Services"],["KBLV","PT First Media Tbk","Consumer Services"],["ATLA","PT Atlantis Subsea Indonesia Tbk","Industrial Services"],["ASBI","PT Asuransi Bintang Tbk","Finance"],["NTBK","PT Nusatama Berkah Tbk","Consumer Durables"],["PTMP","PT Mitra Pack Tbk","Distribution Services"],["FIRE","PT Alfa Energi Investama Tbk","Energy Minerals"],["BAUT","PT Mitra Angkasa Sejahtera Tbk","Distribution Services"],["PSDN","PT Prasidha Aneka Niaga Tbk","Process Industries"],["OBMD","PT OBM Drilchem Tbk","Process Industries"],["MBTO","PT Martina Berto Tbk","Consumer Non-Durables"],["KOPI","PT Mitra Energi Persada Tbk","Distribution Services"],["SDMU","PT Sidomulyo Selaras Tbk","Transportation"],["AIMS","PT Artha Mahiya Investama Tbk","Distribution Services"],["AMMS","PT Agung Menjangan Mas Tbk","Process Industries"],["RBMS","PT Ristia Bintang Mahkotasejati Tbk","Consumer Services"],["YELO","PT Yelooo Integra Datanet Tbk","Distribution Services"],["WOWS","PT Ginting Jaya Energi Tbk","Industrial Services"],["OILS","PT Indo Oil Perkasa Tbk","Process Industries"],["PURI","PT Puri Global Sukses Tbk","Finance"],["SBMA","PT Surya Biru Murni Acetylene Tbk","Process Industries"],["TAXI","PT Express Transindo Utama Tbk","Transportation"],["GEMA","PT Gema Grahasarana Tbk","Producer Manufacturing"],["LAND","PT Trimitra Propertindo Tbk","Consumer Durables"],["NANO","PT Nanotech Indonesia Global Tbk","Commercial Services"],["DFAM","PT Dafam Property Indonesia Tbk","Consumer Services"],["LABA","PT Green Power Group Tbk","Non-Energy Minerals"],["ENZO","PT Morenzo Abadi Perkasa Tbk","Consumer Non-Durables"],["PTIS","PT Indo Straits Tbk","Transportation"],["FLMC","PT Falmaco Nonwoven Industri Tbk","Process Industries"],["LAJU","PT Jasa Berdikari Logistics Tbk","Transportation"],["SNLK","PT Sunter Lakeside Hotel Tbk","Consumer Services"],["NASI","PT Wahana Inti Makmur Tbk","Consumer Non-Durables"],["MEDS","PT Hetzer Medical Indonesia Tbk","Health Technology"],["BAPI","PT Bhakti Agung Propertindo Tbk","Finance"],["RGAS","PT Kian Santang Muliatama Tbk","Industrial Services"],["WINR","PT Winner Nusantara Jaya Tbk","Finance"],["JAYA","PT Armada Berjaya Trans Tbk","Transportation"],["ICON","PT Island Concepts Indonesia Tbk","Consumer Services"],["ISEA","PT Indo American Seafoods Tbk","Consumer Non-Durables"],["CTTH","PT Citatah Tbk","Non-Energy Minerals"],["ESIP","PT Sinergi Inti Plastindo Tbk","Producer Manufacturing"],["KUAS","PT Ace Oldfields Tbk","Producer Manufacturing"],["PCAR","PT Prima Cakrawala Abadi Tbk","Consumer Non-Durables"],["MERI","PT Merry Riana Edukasi Tbk","Commercial Services"],["SMKM","PT Sumber Mas Konstruksi Tbk","Industrial Services"],["OLIV","PT Atlas Nexus Group Tbk","Consumer Durables"],["CHEM","PT Chemstar Indonesia Tbk","Process Industries"],["MIRA","PT Mitra International Resources Tbk","Industrial Services"],["JAST","PT Jasnita Telekomindo Tbk","Communications"],["INAI","PT Indal Aluminium Industry Tbk","Non-Energy Minerals"],["BCIP","PT Bumi Citra Permai Tbk","Finance"],["ISAP","PT Isra Presisi Indonesia Tbk","Producer Manufacturing"],["KRYA","PT Bangun Karya Perkasa Jaya Tbk","Producer Manufacturing"],["PICO","PT Pelangi Indah Canindo Tbk","Process Industries"],["MSKY","PT MNC Vision Network","Communications"],["KIOS","PT Kioson Komersial Indonesia Tbk","Retail Trade"],["LRNA","PT Eka Sari Lorena Transport Tbk","Transportation"],["MPOW","PT Megapower Makmur Tbk","Utilities"],["OPMS","PT Optima Prima Metal Sinergi Tbk","Distribution Services"],["KJEN","PT Krida Jaringan Nusantara Tbk","Transportation"],["RUNS","PT Global Sukses Solusi Tbk","Technology Services"],["TNCA","PT Trimuda Nuansa Citra Tbk","Transportation"],["KICI","PT Kedaung Indah Can Tbk","Consumer Durables"],["LUCK","PT Sentral Mitra Informatika Tbk","Distribution Services"],["RCCC","PT Utama Radar Cahaya Tbk","Electronic Technology"],["BAPA","PT Bekasi Asri Pemula Tbk","Consumer Durables"],["IKAN","PT Era Mandiri Cemerlang Tbk","Consumer Non-Durables"],["HDIT","PT Hensel Davest Indonesia Tbk","Commercial Services"],["DEFI","PT Danasupra Erapacific Tbk","Finance"],["PLAN","PT Planet Properindo Jaya Tbk","Consumer Services"],["HADE","PT Himalaya Energi Perkasa Tbk","Distribution Services"],["RICY","PT Ricky Putra Globalindo Tbk","Consumer Non-Durables"],["WIDI","PT Widiant Jaya Krenindo Tbk","Finance"],["BMBL","PT Lavender Bina Cendikia Tbk","Commercial Services"],["BRRC","PT Raja Roti Cemerlang Tbk","Consumer Non-Durables"],["KAQI","PT Jantra Grupo Indonesia Tbk","Consumer Services"],["HBAT","PT Minahasa Membangun Hebat Tbk","Finance"],["KLIN","PT Klinko Karya Imaji Tbk","Consumer Non-Durables"],["GRPH","PT Griptha Putra Persada Tbk","Consumer Services"],["PJHB","PT Pelayaran Jaya Hidup Baru","Transportation"],["MSIE","PT Multisarana Intan Eduka Tbk","Finance"],["SPRE","PT Soraya Berjaya Indonesia Tbk","Consumer Durables"],["TOOL","PT Rohartindo Nusantara Luas Tbk","Commercial Services"],["BATR","PT Benteng Api Technic Tbk","Non-Energy Minerals"],["NINE","PT Techno9 Indonesia Tbk","Technology Services"],["LMAX","PT Lupromax Pelumas Indonesia Tbk","Process Industries"],["SICO","PT Sigma Energy Compressindo Tbk","Energy Minerals"],["KKES","PT Kusuma Kemindo Sentosa Tbk","Distribution Services"],["PPRI","PT Paperocks Indonesia Tbk","Distribution Services"],["EMMI","PT ESA Medika Mandiri Tbk","Distribution Services"],["WBSA","PT BSA Logistics Indonesia Tbk","Transportation"],["PIPA","PT Oxala Energy International Tbk","Non-Energy Minerals"],["BAIK","PT Bersama Mencapai Puncak Tbk","Consumer Services"],["TGUK","PT Platinum Wahab Nusantara Tbk","Consumer Services"],["LOPI","PT Logisticsplus International Tbk","Transportation"],["JELI","PT Niramas Utama Tbk","Consumer Non-Durables"],["AEGS","PT Anugerah Spareparts Sejahtera Tbk","Producer Manufacturing"],["XCIS","Dana Investasi Real Estat Ciptadana Properti Perhotelan Padjajaran","Finance"]];
-var LANG = LS.getItem("idx_lang") || "zh";
+var LANG = LS.getItem("idx_lang") || "id";
 var THEME = LS.getItem("idx_theme") || "dark";
 var REDUP = (LS.getItem("idx_redup") || "1") === "1";
 var AUTO = (LS.getItem("idx_auto") || "1") === "1";
@@ -580,6 +638,85 @@ var I18N = {
   }
 };
 function t(k){ return (I18N[LANG] && I18N[LANG][k]) || I18N.zh[k] || k; }
+function tr(zh, id){ return LANG === "id" ? id : zh; }
+function sigLabel(s){ return LANG === "id" ? ({ LONG: "BELI", NEUTRAL: "NETRAL", HEDGE: "HINDARI" }[s] || s) : s; }
+
+/* 中文 → 印尼语 文案映射（覆盖静态与动态文本节点） */
+var ZH2ID = {
+  "知道了":"Mengerti", "终端":"Terminal", "搜索":"Cari", "刷新":"Muat ulang",
+  "自选":"Daftar Pantau", "纯 TV 模式":"Mode TV murni", "数据约延迟 15 分钟":"Data tertunda ~15 menit",
+  "持仓":"Posisi", "成交":"Transaksi", "委托":"Order", "模拟下单":"Order Simulasi",
+  "标的":"Simbol", "类型":"Tipe", "市价":"Pasar", "限价":"Limit", "价格":"Harga", "数量":"Jumlah",
+  "1手":"1 Lot", "5手":"5 Lot", "10手":"10 Lot", "全仓":"Semua", "止损/止盈":"SL / TP",
+  "购买力":"Daya beli", "可用":"Tersedia", "金额":"Nilai", "手续费":"Biaya", "合计":"Total",
+  "买入":"Beli", "卖出":"Jual", "IDX 规则":"Aturan IDX", "涨跌停":"Batas ARA/ARB", "保证金率":"Rasio margin",
+  "实时联动":"Live", "重新计算":"Hitung ulang", "做多胜率":"Win Rate Beli",
+  "综合评分":"Skor Komposit", "回测指标":"Metrik Backtest", "四维评分":"Skor 4 Dimensi",
+  "回测净值":"Kurva Backtest", "策略 / 基准":"Strategi / Benchmark", "评分走势":"Tren Skor",
+  "38 / 62 阈值":"Ambang 38 / 62", "预警":"Peringatan",
+  "价格 ≥":"Harga ≥", "价格 ≤":"Harga ≤", "涨跌幅 ≥":"Perubahan ≥", "信号切换":"Perubahan sinyal", "添加":"Tambah",
+  "印尼全市场":"Pasar Indonesia", "按板块浏览 · 点击加载图表":"Jelajahi per sektor · klik untuk memuat grafik",
+  "TV 实时行情":"Harga Real-time TV",
+  "盘口":"Buku Order", "深度":"Kedalaman", "成交量分布":"Profil Volume", "成交明细":"Rincian Transaksi",
+  "新闻":"Berita", "设置":"Pengaturan",
+  "数据源前缀（默认 r.jina.ai；也可填自建 CORS 代理）":"Prefix sumber data (default r.jina.ai; bisa proxy CORS sendiri)",
+  "主题":"Tema", "暗色":"Gelap", "亮色":"Terang", "语言":"Bahasa", "涨跌配色":"Warna naik/turun",
+  "红涨绿跌（A 股习惯）":"Merah naik / hijau turun (kebiasaan A-share)",
+  "绿涨红跌（TV 习惯）":"Hijau naik / merah turun (kebiasaan TV)",
+  "自动刷新":"Auto refresh", "开（60 秒）":"Aktif (60 detik)", "关":"Nonaktif", "保存":"Simpan",
+  "现金":"Kas", "市值":"Nilai pasar", "总资产":"Total aset", "盈亏":"P&L", "卖":"Jual",
+  "代码":"Kode", "成本":"Harga rata-rata", "现价":"Harga", "收益率":"Return",
+  "时间":"Waktu", "方向":"Arah", "费用":"Biaya", "撤单":"Batal", "价差":"Spread",
+  "买盘":"Bid", "卖盘":"Ask", "失衡":"Imbalance", "1 分钟聚合 · 非逐笔":"Agregasi 1 menit · bukan tick-by-tick",
+  "暂无回测":"Belum ada backtest", "策略":"Strategi", "基准":"Benchmark", "最大回撤":"Max Drawdown",
+  "胜率":"Win Rate", "交易":"Trade", "盈亏比":"Profit Factor", "权重":"Bobot",
+  "加载中…":"Memuat…", "暂无新闻，":"Belum ada berita,", "在 Google News 查看":"Lihat di Google News",
+  "暂无预警":"Belum ada peringatan", "停用":"Nonaktif", "启用":"Aktif",
+  "没有匹配的股票":"Tidak ada saham yang cocok",
+  "仅显示前 500 条，请用搜索缩小范围":"Hanya 500 pertama, gunakan pencarian untuk mempersempit",
+  "模拟 · 基于最新价":"Simulasi · berdasarkan harga terakhir",
+  "暂无持仓":"Belum ada posisi", "暂无成交":"Belum ada transaksi", "暂无委托":"Belum ada order",
+  "暂无数据":"Tidak ada data", "已添加预警":"Peringatan ditambahkan", "请输入有效值":"Masukkan nilai yang valid",
+  "已加入自选":"Ditambahkan ke daftar pantau", "已移除":"Dihapus",
+  "趋势":"Tren", "动量":"Momentum", "波动":"Volatilitas", "量能":"Volume",
+  "适合做多":"Layak beli", "观望":"Tunggu", "不建议做多":"Tidak disarankan beli",
+  "已挂单，等待价格触及":"Order dipasang, menunggu harga",
+  "该标的无持仓":"Tidak ada posisi untuk simbol ini",
+  "止损触发":"SL terpicu", "止盈触发":"TP terpicu",
+  "值":"Nilai", "最新价":"Harga terakhir", "止损":"SL", "止盈":"TP",
+  "搜索代码/名称…":"Cari kode/nama…",
+  "图表：TradingView　·　新闻：Google News　·　自选报价：Yahoo（经 r.jina.ai，约 15 分钟延迟）　·　模拟交易/教学演示，不构成投资建议":
+    "Chart: TradingView · Berita: Google News · Harga watchlist: Yahoo (via r.jina.ai, tertunda ~15 menit) · Trading simulasi/edukasi, bukan saran investasi",
+  "默认走 r.jina.ai（公共 Reader，可能限流）。若填 allorigins 等原始代理前缀，会自动追加 URL 编码。代理失效时可勾选「纯 TV 模式」。TV 图表配色不随涨跌配色切换。":
+    "Default r.jina.ai (Reader publik, bisa kena rate limit). Jika memakai prefix proxy mentah seperti allorigins, URL akan di-encode otomatis. Jika proxy gagal, aktifkan Mode TV murni. Warna chart TV tidak mengikuti warna naik/turun.",
+  "TradingView 未加载：请检查网络，或改用 http(s) 打开本页（file:// 可能被浏览器限制）。":
+    "TradingView belum dimuat: periksa jaringan, atau buka via http(s) (file:// bisa dibatasi browser).",
+  "行情获取失败：可能是 file:// 的 CORS 限制、代理限流或网络问题。建议把本文件上传到静态托管，或在 ⚙ 设置里更换数据代理。":
+    "Gagal mengambil harga: kemungkinan batasan CORS file://, rate limit proxy, atau masalah jaringan. Unggah ke static hosting, atau ganti proxy di ⚙ Pengaturan."
+};
+var _trBusy = false;
+function translateDom(){
+  if (LANG !== "id" || _trBusy) return;
+  _trBusy = true;
+  try {
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var n;
+    while ((n = walker.nextNode())) {
+      var p = n.parentNode;
+      if (!p || p.nodeName === "SCRIPT" || p.nodeName === "STYLE") continue;
+      var raw = n.nodeValue, s = raw.trim();
+      if (s && ZH2ID[s]) n.nodeValue = raw.replace(s, ZH2ID[s]);
+    }
+    document.querySelectorAll("[placeholder]").forEach(function(el){
+      var p = el.getAttribute("placeholder");
+      if (p && ZH2ID[p]) el.setAttribute("placeholder", ZH2ID[p]);
+    });
+    document.querySelectorAll("[title]").forEach(function(el){
+      var tt = el.getAttribute("title");
+      if (tt && ZH2ID[tt]) el.setAttribute("title", ZH2ID[tt]);
+    });
+  } finally { _trBusy = false; }
+}
 
 /* ---------- 2. 工具 ---------- */
 function fmt(n, d){
@@ -611,6 +748,226 @@ function toast(msg, type){
   d.textContent = msg;
   box.appendChild(d);
   setTimeout(function(){ d.style.opacity = "0"; d.style.transform = "translateY(6px)"; setTimeout(function(){ d.remove(); }, 220); }, 2600);
+}
+
+/* ---------- 2.5 账户与登录 ---------- */
+var AUTH_KEY = "idx_auth_v1";
+var LOCAL_ACCT_KEY = "idx_accounts_v1";
+var AUTH = null;
+try { AUTH = JSON.parse(LS.getItem(AUTH_KEY) || "null"); } catch (e) { AUTH = null; }
+
+function isAuthed(){ return !!(AUTH && AUTH.user && AUTH.ts && (Date.now() - AUTH.ts < 7 * 24 * 3600 * 1000)); }
+function setAuthed(user, role){
+  AUTH = { user: user, role: role || "user", ts: Date.now() };
+  LS.setItem(AUTH_KEY, JSON.stringify(AUTH));
+  updateAcctUI();
+}
+function clearAuth(){ AUTH = null; LS.removeItem(AUTH_KEY); }
+function updateAcctUI(){
+  var chip = document.getElementById("acctChip"), out = document.getElementById("logoutBtn");
+  if (!chip || !out) return;
+  if (isAuthed()) { chip.hidden = false; out.hidden = false; chip.textContent = AUTH.user; }
+  else { chip.hidden = true; out.hidden = true; }
+  applyRoleUI();
+}
+function localAccounts(){
+  try { var a = JSON.parse(LS.getItem(LOCAL_ACCT_KEY)); if (Array.isArray(a) && a.length) return a; } catch (e) {}
+  return [{ u: "admin", p: "admin123", role: "owner" }];
+}
+function saveLocalAccounts(a){ LS.setItem(LOCAL_ACCT_KEY, JSON.stringify(a)); }
+function authPost(payload){
+  if (!CONFIG.authUrl) return Promise.reject(new Error("no-auth-url"));
+  return fetch(CONFIG.authUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+}
+function doLogin(){
+  var u = document.getElementById("loginUser").value.trim();
+  var p = document.getElementById("loginPass").value;
+  var msg = document.getElementById("loginMsg");
+  if (!u || !p) { msg.textContent = "Isi username dan password"; return; }
+  msg.textContent = "Memeriksa…";
+  var done = function(user, role){
+    setAuthed(user, role);
+    document.getElementById("loginOverlay").style.display = "none";
+    msg.textContent = "";
+    startApp();
+  };
+  if (CONFIG.authUrl) {
+    authPost({ action: "login", username: u, password: p })
+      .then(function(j){ if (j && j.ok) done(j.user || u, j.role); else msg.textContent = (j && j.message) || "Username atau password salah"; })
+      .catch(function(){ msg.textContent = "Gagal menghubungi Google Sheets. Periksa URL/Apps Script."; });
+  } else {
+    var acc = localAccounts().find(function(a){ return a.u === u && a.p === p && a.active !== false; });
+    if (acc) done(acc.u, acc.role); else msg.textContent = "Username atau password salah";
+  }
+}
+function acctMsg(text, ok){
+  var m = document.getElementById("setAcctMsg");
+  if (!m) return;
+  m.textContent = text;
+  m.className = "msg" + (ok ? " ok" : "");
+}
+function changeAccount(){
+  if (!isAuthed()) { acctMsg("Harus login", false); return; }
+  var nu = document.getElementById("setNewUser").value.trim();
+  var np = document.getElementById("setNewPass").value;
+  var cp = document.getElementById("setCurPass").value;
+  if (!nu || !np || !cp) { acctMsg("Lengkapi username/password baru dan password saat ini", false); return; }
+  if (CONFIG.authUrl) {
+    authPost({ action: "setAccount", username: AUTH.user, password: cp, newUsername: nu, newPassword: np })
+      .then(function(j){ if (j && j.ok) { acctMsg("Akun diperbarui", true); setAuthed(nu, AUTH.role); } else acctMsg((j && j.message) || "Gagal memperbarui akun", false); })
+      .catch(function(){ acctMsg("Gagal menghubungi Google Sheets", false); });
+  } else {
+    var accs = localAccounts();
+    var me = accs.find(function(a){ return a.u === AUTH.user && a.p === cp; });
+    if (!me) { acctMsg("Password saat ini salah", false); return; }
+    me.u = nu; me.p = np;
+    saveLocalAccounts(accs);
+    setAuthed(nu, me.role);
+    acctMsg("Akun diperbarui (mode lokal)", true);
+  }
+}
+function wireAuth(){
+  var btn = document.getElementById("loginBtn");
+  if (btn) btn.onclick = doLogin;
+  var user = document.getElementById("loginUser");
+  if (user) user.addEventListener("keydown", function(e){ if (e.key === "Enter") doLogin(); });
+  var pass = document.getElementById("loginPass");
+  if (pass) pass.addEventListener("keydown", function(e){ if (e.key === "Enter") doLogin(); });
+  var out = document.getElementById("logoutBtn");
+  if (out) out.onclick = function(){ clearAuth(); location.reload(); };
+  var acctBtn = document.getElementById("setAcctBtn");
+  if (acctBtn) acctBtn.onclick = changeAccount;
+  wireAdmin();
+}
+
+function isAdmin(){ return !!(AUTH && (AUTH.role === "owner" || AUTH.role === "admin")); }
+function applyRoleUI(){
+  var admin = isAdmin();
+  var setBtn = document.getElementById("setBtn"); if (setBtn) setBtn.hidden = !admin;
+  var sec = document.getElementById("adminSec"); if (sec) sec.hidden = !admin;
+}
+function admMsg(text, ok){ var m = document.getElementById("admMsg"); if (!m) return; m.textContent = text; m.className = "msg" + (ok ? " ok" : ""); }
+function admPass(){ return (document.getElementById("admPass").value || "").trim(); }
+function admRefresh(){
+  if (!isAdmin()) return;
+  var p = admPass();
+  if (!p) { admMsg("Masukkan password admin", false); return; }
+  if (CONFIG.authUrl) {
+    authPost({ action: "listUsers", adminUser: AUTH.user, adminPassword: p })
+      .then(function(j){ if (j && j.ok) { renderAdmList(j.users || []); admMsg("", true); } else admMsg((j && j.message) || "Gagal memuat user", false); })
+      .catch(function(){ admMsg("Gagal menghubungi Google Sheets", false); });
+  } else {
+    var accs = localAccounts();
+    var me = accs.find(function(a){ return a.u === AUTH.user && a.p === p && (a.role === "owner" || a.role === "admin"); });
+    if (!me) { admMsg("Password admin salah", false); return; }
+    renderAdmList(accs.map(function(a){ return { u: a.u, role: a.role || "user", active: a.active !== false }; }));
+    admMsg("", true);
+  }
+}
+function renderAdmList(users){
+  var box = document.getElementById("admList"); if (!box) return;
+  box.innerHTML = users.map(function(u){
+    return '<div class="adm-row" data-u="' + escHtml(u.u) + '">' +
+      '<span>' + escHtml(u.u) + '</span>' +
+      '<select data-role>' + ["user", "admin", "owner"].map(function(r){ return '<option value="' + r + '"' + (u.role === r ? " selected" : "") + '>' + r + '</option>'; }).join("") + '</select>' +
+      '<button data-toggle>' + (u.active === false ? "Aktifkan" : "Nonaktifkan") + '</button>' +
+      '<button data-reset>Reset</button>' +
+      '<button data-del>Hapus</button></div>';
+  }).join("") || '<div class="muted" style="font-size:11px">Belum ada user</div>';
+}
+function admAdd(){
+  if (!isAdmin()) return;
+  var p = admPass();
+  var u = (document.getElementById("admUser").value || "").trim();
+  var np = document.getElementById("admNewPass").value;
+  var role = document.getElementById("admRole").value;
+  if (!p) { admMsg("Masukkan password admin", false); return; }
+  if (!u || !np) { admMsg("Username dan password wajib", false); return; }
+  if (CONFIG.authUrl) {
+    authPost({ action: "saveUser", adminUser: AUTH.user, adminPassword: p, target: u, password: np, role: role, active: true })
+      .then(function(j){ if (j && j.ok) { admMsg("User disimpan", true); admRefresh(); } else admMsg((j && j.message) || "Gagal menyimpan", false); })
+      .catch(function(){ admMsg("Gagal menghubungi Google Sheets", false); });
+  } else {
+    var accs = localAccounts();
+    var me = accs.find(function(a){ return a.u === AUTH.user && a.p === p && (a.role === "owner" || a.role === "admin"); });
+    if (!me) { admMsg("Password admin salah", false); return; }
+    var ex = accs.find(function(a){ return a.u === u; });
+    if (ex) { ex.p = np; ex.role = role; ex.active = true; }
+    else accs.push({ u: u, p: np, role: role, active: true });
+    saveLocalAccounts(accs);
+    admMsg("User disimpan (mode lokal)", true);
+    renderAdmList(accs.map(function(a){ return { u: a.u, role: a.role || "user", active: a.active !== false }; }));
+  }
+}
+function admSave(target, opts, p){
+  if (!isAdmin()) return;
+  if (CONFIG.authUrl) {
+    authPost({ action: "saveUser", adminUser: AUTH.user, adminPassword: p, target: target, password: opts.password || "", role: opts.role, active: opts.active })
+      .then(function(j){ if (j && j.ok) { admMsg("Tersimpan", true); admRefresh(); } else admMsg((j && j.message) || "Gagal menyimpan", false); })
+      .catch(function(){ admMsg("Gagal menghubungi Google Sheets", false); });
+  } else {
+    var accs = localAccounts();
+    var me = accs.find(function(a){ return a.u === AUTH.user && a.p === p && (a.role === "owner" || a.role === "admin"); });
+    if (!me) { admMsg("Password admin salah", false); return; }
+    var t = accs.find(function(a){ return a.u === target; });
+    if (!t) { admMsg("User tidak ditemukan", false); return; }
+    if (opts.password) t.p = opts.password;
+    if (opts.role) t.role = opts.role;
+    if (opts.active !== undefined) t.active = opts.active;
+    saveLocalAccounts(accs);
+    admMsg("Tersimpan (mode lokal)", true);
+    renderAdmList(accs.map(function(a){ return { u: a.u, role: a.role || "user", active: a.active !== false }; }));
+  }
+}
+function admDelete(target, p){
+  if (!isAdmin()) return;
+  if (CONFIG.authUrl) {
+    authPost({ action: "deleteUser", adminUser: AUTH.user, adminPassword: p, target: target })
+      .then(function(j){ if (j && j.ok) { admMsg("User dihapus", true); admRefresh(); } else admMsg((j && j.message) || "Gagal menghapus", false); })
+      .catch(function(){ admMsg("Gagal menghubungi Google Sheets", false); });
+  } else {
+    var accs = localAccounts();
+    var me = accs.find(function(a){ return a.u === AUTH.user && a.p === p && (a.role === "owner" || a.role === "admin"); });
+    if (!me) { admMsg("Password admin salah", false); return; }
+    if (target === AUTH.user) { admMsg("Tidak bisa menghapus akun sendiri", false); return; }
+    accs = accs.filter(function(a){ return a.u !== target; });
+    saveLocalAccounts(accs);
+    admMsg("User dihapus (mode lokal)", true);
+    renderAdmList(accs.map(function(a){ return { u: a.u, role: a.role || "user", active: a.active !== false }; }));
+  }
+}
+function wireAdmin(){
+  var load = document.getElementById("admLoad"); if (load) load.onclick = admRefresh;
+  var add = document.getElementById("admAdd"); if (add) add.onclick = admAdd;
+  var pass = document.getElementById("admPass");
+  if (pass) pass.addEventListener("keydown", function(e){ if (e.key === "Enter") admRefresh(); });
+  var list = document.getElementById("admList");
+  if (list) {
+    list.addEventListener("click", function(e){
+      var row = e.target.closest(".adm-row"); if (!row) return;
+      var target = row.getAttribute("data-u");
+      var p = admPass(); if (!p) { admMsg("Masukkan password admin", false); return; }
+      if (e.target.matches("[data-toggle]")) {
+        var currentlyActive = e.target.textContent.indexOf("Nonaktifkan") >= 0;
+        admSave(target, { active: !currentlyActive }, p);
+      } else if (e.target.matches("[data-reset]")) {
+        var np = prompt("Password baru untuk " + target);
+        if (np) admSave(target, { password: np }, p);
+      } else if (e.target.matches("[data-del]")) {
+        if (confirm("Hapus user " + target + "?")) admDelete(target, p);
+      }
+    });
+    list.addEventListener("change", function(e){
+      if (!e.target.matches("[data-role]")) return;
+      var row = e.target.closest(".adm-row"); if (!row) return;
+      var p = admPass(); if (!p) { admMsg("Masukkan password admin", false); return; }
+      admSave(row.getAttribute("data-u"), { role: e.target.value }, p);
+    });
+  }
 }
 
 /* ---------- 3. 数据层 DL（allorigins 代理 Yahoo） ---------- */
@@ -821,7 +1178,7 @@ function renderWatch(){
     return '<div class="wrow' + sel + '" data-sym="' + r.sym + '">' +
       '<span class="code">' + code + '</span>' +
       '<span class="px ' + cls + ' num">' + fmt(r.q.price) + '</span>' +
-      '<span class="chg ' + cls + '">' + sign(r.q.changePct) + r.q.changePct.toFixed(2) + '%</span>' +
+      '<span class="chg ' + cls + '">' + sign(r.q.changePct) + fmt(r.q.changePct, 2) + '%</span>' +
       '<button class="x" data-del="' + r.sym + '">✕</button>' +
       '</div>';
   }).join("");
@@ -835,7 +1192,7 @@ function refreshQuotes(){
     Object.keys(map).forEach(function(s){ quotes[s] = map[s]; });
     renderWatch();
     var el = document.getElementById("updated");
-    if (el) el.textContent = "更新 " + new Date().toLocaleTimeString(LANG === "id" ? "id-ID" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+    if (el) el.textContent = tr("更新 ", "Diperbarui ") + new Date().toLocaleTimeString(LANG === "id" ? "id-ID" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
     updateCurrentMeta();
     updateRules();
     checkPending();
@@ -860,7 +1217,7 @@ function updateCurrentMeta(){
   if (!el) return;
   if (!q) { el.textContent = ""; return; }
   var cls = q.change >= 0 ? "up" : "down";
-  el.innerHTML = '<span class="num">' + fmt(q.price) + '</span> <span class="' + cls + '">' + sign(q.changePct) + q.changePct.toFixed(2) + '%</span>';
+  el.innerHTML = '<span class="num">' + fmt(q.price) + '</span> <span class="' + cls + '">' + sign(q.changePct) + fmt(q.changePct, 2) + '%</span>';
 }
 
 /* ---------- 4.5 模拟交易（M2） ---------- */
@@ -1006,7 +1363,7 @@ function updatePreview(){
   var gross = px > 0 ? px * qty : 0;
   var fee = gross * FEE_BUY;
   setText("tradeBP", fmtIDR(pf.cash));
-  setText("tradeAvail", availableQty(sym) + " 股");
+  setText("tradeAvail", availableQty(sym) + tr(" 股", " lembar"));
   setText("tradeAmount", gross ? fmtIDR(gross) : "--");
   setText("tradeFee", gross ? fmtIDR(fee) : "--");
   setText("tradeTotal", gross ? fmtIDR(gross + fee) : "--");
@@ -1031,27 +1388,27 @@ function currentTradeReq(side){
 
 function validateTrade(req){
   var E = [];
-  if (!req.symbol) E.push("请选择标的");
-  if (!(req.qty > 0)) E.push("请输入有效数量");
-  else if (req.qty % LOT !== 0) E.push("数量需为 " + LOT + " 股的整数倍");
+  if (!req.symbol) E.push(tr("请选择标的", "Pilih simbol"));
+  if (!(req.qty > 0)) E.push(tr("请输入有效数量", "Masukkan jumlah yang valid"));
+  else if (req.qty % LOT !== 0) E.push(tr("数量需为 " + LOT + " 股的整数倍", "Jumlah harus kelipatan " + LOT + " lembar"));
   var px = Number(req.price);
-  if (!(px > 0)) E.push("请输入有效价格");
+  if (!(px > 0)) E.push(tr("请输入有效价格", "Masukkan harga yang valid"));
   if (px > 0) {
     var tk = tickSize(px);
-    if (Math.abs(px / tk - Math.round(px / tk)) > 1e-6) E.push("价格需为 Rp" + tk + " 的整数倍");
+    if (Math.abs(px / tk - Math.round(px / tk)) > 1e-6) E.push(tr("价格需为 Rp" + tk + " 的整数倍", "Harga harus kelipatan Rp" + tk));
   }
   if (req.prev > 0 && px > 0) {
     var aa = araArb(req.prev);
-    if (aa.ara != null && px > aa.ara) E.push("价格高于 ARA " + fmt(aa.ara));
-    if (aa.arb != null && px < aa.arb) E.push("价格低于 ARB " + fmt(aa.arb));
+    if (aa.ara != null && px > aa.ara) E.push(tr("价格高于 ARA " + fmt(aa.ara), "Harga di atas ARA " + fmt(aa.ara)));
+    if (aa.arb != null && px < aa.arb) E.push(tr("价格低于 ARB " + fmt(aa.arb), "Harga di bawah ARB " + fmt(aa.arb)));
   }
   if (req.side === "买入") {
     var total = px * req.qty * (1 + FEE_BUY);
-    if (total > pf.cash + 1e-6) E.push("购买力不足：需 " + fmtIDR(total) + "，可用 " + fmtIDR(pf.cash));
+    if (total > pf.cash + 1e-6) E.push(tr("购买力不足：需 " + fmtIDR(total) + "，可用 " + fmtIDR(pf.cash), "Daya beli kurang: butuh " + fmtIDR(total) + ", tersedia " + fmtIDR(pf.cash)));
   } else {
     var avail = availableQty(req.symbol);
-    if (!pf.positions[req.symbol]) E.push("该标的无持仓");
-    else if (req.qty > avail) E.push("可卖 " + avail + " 股（T+2 未交收部分不可卖）");
+    if (!pf.positions[req.symbol]) E.push(tr("该标的无持仓", "Tidak ada posisi"));
+    else if (req.qty > avail) E.push(tr("可卖 " + avail + " 股（T+2 未交收部分不可卖）", "Bisa dijual " + avail + " lembar (T+2 belum settle)"));
   }
   return E;
 }
@@ -1065,7 +1422,7 @@ function submitTrade(side){
     if (!crosses) {
       pf.orders.push({ id: "o" + Date.now(), t: Date.now(), side: side, symbol: req.symbol, qty: req.qty, price: req.price });
       savePF(); renderTrade();
-      tradeMsg("已挂单，等待价格触及", true);
+      tradeMsg(tr("已挂单，等待价格触及", "Order dipasang, menunggu harga"), true);
       return;
     }
   }
@@ -1083,7 +1440,7 @@ function fillTrade(side, sym, qty, price, opts){
   var fee = gross * (side === "买入" ? FEE_BUY : FEE_SELL);
   if (side === "买入") {
     var total = gross + fee;
-    if (total > pf.cash + 1e-6) { tradeMsg("购买力不足"); return; }
+    if (total > pf.cash + 1e-6) { tradeMsg(tr("购买力不足", "Daya beli kurang")); return; }
     pf.cash -= total;
     var p = pf.positions[sym] || { qty: 0, avg: 0, lots: [], sl: null, tp: null };
     var nq = p.qty + qty;
@@ -1097,9 +1454,9 @@ function fillTrade(side, sym, qty, price, opts){
     pf.trades.unshift({ t: Date.now(), side: "买入", symbol: sym, qty: qty, price: price, fee: fee, amount: gross });
   } else {
     var pos = pf.positions[sym];
-    if (!pos) { tradeMsg("该标的无持仓"); return; }
+    if (!pos) { tradeMsg(tr("该标的无持仓", "Tidak ada posisi")); return; }
     var avail = availableQty(sym);
-    if (qty > avail) { tradeMsg("可卖不足（T+2）"); return; }
+    if (qty > avail) { tradeMsg(tr("可卖不足（T+2）", "Jual tidak cukup (T+2)")); return; }
     var left = qty, today = todayISO();
     pos.lots = (pos.lots || []).map(function(l){
       if (left <= 0 || l.settleAt > today) return l;
@@ -1114,8 +1471,10 @@ function fillTrade(side, sym, qty, price, opts){
   }
   savePF();
   renderTrade();
-  tradeMsg((side === "买入" ? "买入" : "卖出") + " " + qty + " 股 @ " + fmt(price) + " 成交", true);
-  toast((side === "买入" ? "买入" : "卖出") + " " + sym.replace(".JK", "") + " " + qty + " @ " + fmt(price));
+  var sideZh = side === "买入" ? "买入" : "卖出";
+  var sideId = side === "买入" ? "Beli" : "Jual";
+  tradeMsg(tr(sideZh + " " + qty + " 股 @ " + fmt(price) + " 成交", sideId + " " + qty + " lembar @ " + fmt(price) + " berhasil"), true);
+  toast(tr(sideZh + " " + sym.replace(".JK", "") + " " + qty + " @ " + fmt(price), sideId + " " + sym.replace(".JK", "") + " " + qty + " @ " + fmt(price)));
 }
 
 function checkPending(){
@@ -1139,8 +1498,8 @@ function checkStops(){
     if (last == null) return;
     var avail = availableQty(sym);
     if (avail <= 0) return;
-    if (p.sl && last <= p.sl) { fillTrade("卖出", sym, avail, last); toast("止损触发 " + sym.replace(".JK", "")); }
-    else if (p.tp && last >= p.tp) { fillTrade("卖出", sym, avail, last); toast("止盈触发 " + sym.replace(".JK", "")); }
+    if (p.sl && last <= p.sl) { fillTrade("卖出", sym, avail, last); toast(tr("止损触发 " + sym.replace(".JK", ""), "SL terpicu " + sym.replace(".JK", ""))); }
+    else if (p.tp && last >= p.tp) { fillTrade("卖出", sym, avail, last); toast(tr("止盈触发 " + sym.replace(".JK", ""), "TP terpicu " + sym.replace(".JK", ""))); }
   });
 }
 
@@ -1192,7 +1551,7 @@ function renderLadder(book){
   var maxQ = 1;
   book.bids.concat(book.asks).forEach(function(x){ if (x.qty > maxQ) maxQ = x.qty; });
   var html = book.asks.slice().reverse().map(function(a){ return obRowHtml("ask", a, (a.qty / maxQ * 100).toFixed(1)); }).join("");
-  html += '<div class="ob-last"><span class="num">' + fmt(book.last) + '</span><span class="muted">价差 ' + fmt(book.spread, 0) + '</span></div>';
+  html += '<div class="ob-last"><span class="num">' + fmt(book.last) + '</span><span class="muted">' + tr("价差 ", "Spread ") + fmt(book.spread, 0) + '</span></div>';
   html += book.bids.map(function(b){ return obRowHtml("bid", b, (b.qty / maxQ * 100).toFixed(1)); }).join("");
   box.innerHTML = html;
 }
@@ -1556,7 +1915,7 @@ function drawRadar(dims){
   ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   dims.forEach(function(d, i){
     var lx = cx + Math.cos(axes[i]) * (R + 14), ly = cy + Math.sin(axes[i]) * (R + 12);
-    ctx.fillStyle = "#8b95a5"; ctx.fillText(d.name, lx, ly - 6);
+    ctx.fillStyle = "#8b95a5"; ctx.fillText(dimName(d.key), lx, ly - 6);
     ctx.fillStyle = d.color; ctx.font = "600 11px sans-serif"; ctx.fillText(fmt(d.score, 0), lx, ly + 6); ctx.font = "10px sans-serif";
   });
 }
@@ -1598,7 +1957,7 @@ function drawBacktest(bt){
   var g = setupQCanvas(cv, 150), ctx = g.ctx, w = g.w, h = g.h;
   ctx.clearRect(0, 0, w, h);
   if (!bt || !bt.curve || !bt.curve.length) {
-    ctx.fillStyle = "#5f6b7a"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText("数据不足", w / 2, h / 2); return;
+    ctx.fillStyle = "#5f6b7a"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(tr("数据不足", "Data tidak cukup"), w / 2, h / 2); return;
   }
   var padL = 6, padR = 40, padT = 10, padB = 20;
   var pts = bt.curve, vals = pts.map(function(p){ return p.e; }).concat(pts.map(function(p){ return p.b; }));
@@ -1623,15 +1982,15 @@ function drawBacktest(bt){
 function renderBtMetrics(bt){
   var box = document.getElementById("qBtMetrics"); if (!box) return;
   if (!bt) { box.innerHTML = '<span class="m">暂无回测</span>'; return; }
-  function pct(v){ return v == null ? "--" : (v * 100).toFixed(1) + "%"; }
+  function pct(v){ return v == null ? "--" : fmt(v * 100, 1) + "%"; }
   box.innerHTML =
     '<span>策略 <b>' + pct(bt.totalReturn) + '</b></span>' +
     '<span>基准 <b>' + pct(bt.benchmarkReturn) + '</b></span>' +
     '<span>最大回撤 <b>' + pct(bt.maxDrawdown) + '</b></span>' +
-    '<span>Sharpe <b>' + (bt.sharpe == null ? "--" : bt.sharpe) + '</b></span>' +
+    '<span>Sharpe <b>' + (bt.sharpe == null ? "--" : fmt(bt.sharpe, 2)) + '</b></span>' +
     '<span>胜率 <b>' + pct(bt.winRate) + '</b></span>' +
     '<span>交易 <b>' + bt.trades + '</b></span>' +
-    '<span>盈亏比 <b>' + (bt.profitFactor == null ? "--" : bt.profitFactor) + '</b></span>';
+    '<span>盈亏比 <b>' + (bt.profitFactor == null ? "--" : fmt(bt.profitFactor, 2)) + '</b></span>';
 }
 function qLiveUpdate(q, candles, price){
   if (!q || !candles || !candles.length || !(price > 0)) return q;
@@ -1665,14 +2024,14 @@ function refreshQuantLive(){
   var live = qLiveUpdate(qc.q, qc.candles, q.price);
   renderQuant(live);
   var qp = document.getElementById("qPrice");
-  if (qp) qp.textContent = "现价 " + fmt(q.price) + " · " + sign(q.changePct) + q.changePct.toFixed(2) + "%";
+  if (qp) qp.textContent = tr("现价 ", "Harga ") + fmt(q.price) + " · " + sign(q.changePct) + fmt(q.changePct, 2) + "%";
 }
 function drawScore(q){
   var cv = document.getElementById("qScore"); if (!cv) return;
   var g = setupQCanvas(cv, 150), ctx = g.ctx, w = g.w, h = g.h;
   ctx.clearRect(0, 0, w, h);
   var ss = q.backtest && q.backtest.scoreSeries;
-  if (!ss || !ss.length) { ctx.fillStyle = "#5f6b7a"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText("数据不足", w / 2, h / 2); return; }
+  if (!ss || !ss.length) { ctx.fillStyle = "#5f6b7a"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(tr("数据不足", "Data tidak cukup"), w / 2, h / 2); return; }
   var pts = ss.slice();
   if (q.livePrice && q.composite != null) pts.push({ t: Math.floor(Date.now() / 1000), s: q.composite });
   var padL = 8, padR = 34, padT = 10, padB = 18;
@@ -1704,7 +2063,7 @@ function renderDims(q){
   var box = document.getElementById("qDims"); if (!box) return;
   box.innerHTML = q.dims.map(function(d){
     var w = Math.max(0, Math.min(100, d.score)).toFixed(1);
-    return '<div class="q-dim"><span style="color:' + d.color + '">' + d.name + '</span>' +
+    return '<div class="q-dim"><span style="color:' + d.color + '">' + dimName(d.key) + '</span>' +
       '<span class="bar"><i style="width:' + w + '%;background:' + d.color + '"></i></span>' +
       '<span class="v">' + fmt(d.score, 1) + '</span></div>';
   }).join("") +
@@ -1740,9 +2099,11 @@ function drawWinRate(lw){
   ctx.strokeStyle = color; ctx.lineWidth = lw2; ctx.lineCap = "round"; ctx.stroke();
   ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.font = "700 30px sans-serif"; ctx.fillText(Math.round(rate * 100) + "%", cx, cy - 6);
-  ctx.font = "10px sans-serif"; ctx.fillStyle = "#8b95a5"; ctx.fillText("做多胜率", cx, cy + 20);
-  var verdict = rate >= 0.55 ? "适合做多" : rate >= 0.45 ? "观望" : "不建议做多";
-  if (meta) meta.innerHTML = '<b style="color:' + color + '">' + verdict + '</b><br>样本 ' + lw.n + ' · 未来 5 根平均 ' + (lw.avg >= 0 ? "+" : "") + (lw.avg * 100).toFixed(2) + '%';
+  ctx.font = "10px sans-serif"; ctx.fillStyle = "#8b95a5"; ctx.fillText(tr("做多胜率", "Win Rate Beli"), cx, cy + 20);
+  var verdict = rate >= 0.55 ? tr("适合做多", "Layak beli") : rate >= 0.45 ? tr("观望", "Tunggu") : tr("不建议做多", "Tidak disarankan beli");
+  if (meta) meta.innerHTML = '<b style="color:' + color + '">' + verdict + '</b><br>' +
+    tr("样本 " + lw.n + " · 未来 5 根平均 " + (lw.avg >= 0 ? "+" : "") + fmt(lw.avg * 100, 2) + '%',
+       "Sampel " + lw.n + " · Rata-rata 5 bar ke depan " + (lw.avg >= 0 ? "+" : "") + fmt(lw.avg * 100, 2) + '%');
 }
 function renderQuant(q){
   var chip = document.getElementById("qSignal"), asof = document.getElementById("qAsOf");
@@ -1754,18 +2115,20 @@ function renderQuant(q){
     ["qRadar", "qGauge", "qBt", "qScore", "qWin"].forEach(function(id){ var cv = document.getElementById(id); if (cv) { var c = cv.getContext("2d"); c.clearRect(0, 0, cv.width, cv.height); } });
     return;
   }
-  if (chip) { chip.textContent = q.signal; chip.className = "chip " + (q.signal === "LONG" ? "long" : q.signal === "HEDGE" ? "hedge" : "neutral"); }
-  if (asof) asof.textContent = "综合 " + fmt(q.composite, 1) + " · 置信度 " + (q.confidence * 100).toFixed(0) + "% · " + q.bars + " 根 K 线";
+  if (chip) { chip.textContent = sigLabel(q.signal); chip.className = "chip " + (q.signal === "LONG" ? "long" : q.signal === "HEDGE" ? "hedge" : "neutral"); }
+  if (asof) asof.textContent = tr(
+    "综合 " + fmt(q.composite, 1) + " · 置信度 " + (q.confidence * 100).toFixed(0) + "% · " + q.bars + " 根 K 线",
+    "Komposit " + fmt(q.composite, 1) + " · Keyakinan " + (q.confidence * 100).toFixed(0) + "% · " + q.bars + " bar");
   var tf = document.getElementById("qTf"); if (tf) tf.textContent = tfLabel(chartInterval);
-  drawRadar(q.dims); drawGauge(q.composite, q.signal); drawBacktest(q.backtest);
+  drawRadar(q.dims); drawGauge(q.composite, sigLabel(q.signal)); drawBacktest(q.backtest);
   drawWinRate(calcLongWin(q.backtest && q.backtest.pairs, q.composite));
   renderBtMetrics(q.backtest);
   renderDims(q);
   drawScore(q);
   var det = document.getElementById("qDetail");
   if (det) {
-    det.innerHTML = q.dims.map(function(d){ return '<span style="color:' + d.color + '">' + d.name + '</span> ' + fmt(d.score, 1) + ' · 权重 ' + (d.weight * 100).toFixed(1) + '%' + (d.riskFlag ? ' · 风险触发' : ''); }).join('　') +
-      '<br>趋势 ' + fmt(q.sub.trend, 0) + ' / 动量 ' + fmt(q.sub.momentum, 0) + ' / 波动 ' + fmt(q.sub.volatility, 0) + ' / 量能 ' + fmt(q.sub.volume, 0);
+    det.innerHTML = q.dims.map(function(d){ return '<span style="color:' + d.color + '">' + dimName(d.key) + '</span> ' + fmt(d.score, 1) + ' · ' + tr('权重','Bobot') + ' ' + (d.weight * 100).toFixed(1) + '%' + (d.riskFlag ? ' · ' + tr('风险触发','Risk trigger') : ''); }).join('　') +
+      '<br>' + dimName('trend') + ' ' + fmt(q.sub.trend, 0) + ' / ' + dimName('momentum') + ' ' + fmt(q.sub.momentum, 0) + ' / ' + dimName('volatility') + ' ' + fmt(q.sub.volatility, 0) + ' / ' + dimName('volume') + ' ' + fmt(q.sub.volume, 0);
   }
 }
 function tfRange(tf){
@@ -1840,7 +2203,10 @@ function renderAlerts(){
   var cnt = document.getElementById("alertCount"); if (cnt) cnt.textContent = alerts.length;
   if (!alerts.length) { box.innerHTML = '<div class="muted" style="font-size:11px;padding:4px 0">暂无预警</div>'; return; }
   box.innerHTML = alerts.map(function(a){
-    var label = a.type === "above" ? "价格 ≥ " + fmt(a.value) : a.type === "below" ? "价格 ≤ " + fmt(a.value) : a.type === "pct" ? "涨跌幅 ≥ " + a.value + "%" : "信号切换";
+    var label = a.type === "above" ? tr("价格 ≥ ", "Harga ≥ ") + fmt(a.value)
+      : a.type === "below" ? tr("价格 ≤ ", "Harga ≤ ") + fmt(a.value)
+      : a.type === "pct" ? tr("涨跌幅 ≥ ", "Perubahan ≥ ") + a.value + "%"
+      : tr("信号切换", "Perubahan sinyal");
     return '<div class="al-row"><span>' + a.sym.replace(".JK", "") + ' · ' + label + '</span><span class="muted">' + (a.enabled === false ? "停用" : "启用") + '</span><button class="x" data-del-alert="' + a.id + '">✕</button></div>';
   }).join("");
 }
@@ -1862,13 +2228,14 @@ function checkAlerts(){
     var q = quotes[a.sym];
     if (!q) return;
     var hit = false, msg = "";
-    if (a.type === "above" && q.price >= a.value) { hit = true; msg = a.sym.replace(".JK", "") + " 价格 " + fmt(q.price) + " ≥ " + fmt(a.value); }
-    else if (a.type === "below" && q.price <= a.value) { hit = true; msg = a.sym.replace(".JK", "") + " 价格 " + fmt(q.price) + " ≤ " + fmt(a.value); }
-    else if (a.type === "pct" && Math.abs(q.changePct) >= a.value) { hit = true; msg = a.sym.replace(".JK", "") + " 涨跌幅 " + q.changePct.toFixed(2) + "% ≥ " + a.value + "%"; }
+    var code = a.sym.replace(".JK", "");
+    if (a.type === "above" && q.price >= a.value) { hit = true; msg = tr(code + " 价格 " + fmt(q.price) + " ≥ " + fmt(a.value), code + " harga " + fmt(q.price) + " ≥ " + fmt(a.value)); }
+    else if (a.type === "below" && q.price <= a.value) { hit = true; msg = tr(code + " 价格 " + fmt(q.price) + " ≤ " + fmt(a.value), code + " harga " + fmt(q.price) + " ≤ " + fmt(a.value)); }
+    else if (a.type === "pct" && Math.abs(q.changePct) >= a.value) { hit = true; msg = tr(code + " 涨跌幅 " + fmt(q.changePct, 2) + "% ≥ " + a.value + "%", code + " perubahan " + fmt(q.changePct, 2) + "% ≥ " + a.value + "%"); }
     else if (a.type === "signal") {
       var c = quantCache[a.sym + "|" + chartInterval];
       if (c && c.q) {
-        if (a.lastSignal && a.lastSignal !== c.q.signal) { hit = true; msg = a.sym.replace(".JK", "") + " 信号 " + a.lastSignal + " → " + c.q.signal; }
+        if (a.lastSignal && a.lastSignal !== c.q.signal) { hit = true; msg = tr(code + " 信号 " + a.lastSignal + " → " + c.q.signal, code + " sinyal " + sigLabel(a.lastSignal) + " → " + sigLabel(c.q.signal)); }
         a.lastSignal = c.q.signal;
       }
     }
@@ -2014,12 +2381,30 @@ var SECTOR_ZH = {
   "Consumer Durables": "耐用消费", "Consumer Services": "消费服务", "Commercial Services": "商业服务",
   "Miscellaneous": "其他", "Electronic Technology": "电子科技"
 };
-function sectorLabel(s){ return LANG === "zh" ? (SECTOR_ZH[s] || s) : s; }
+var SECTOR_ID = {
+  "Finance": "Keuangan", "Technology Services": "Layanan Teknologi", "Energy Minerals": "Mineral Energi",
+  "Non-Energy Minerals": "Mineral Non-Energi", "Utilities": "Utilitas", "Communications": "Komunikasi",
+  "Health Services": "Layanan Kesehatan", "Process Industries": "Industri Proses", "Consumer Non-Durables": "Konsumen Primer",
+  "Producer Manufacturing": "Manufaktur", "Retail Trade": "Perdagangan Ritel", "Distribution Services": "Distribusi",
+  "Health Technology": "Teknologi Kesehatan", "Industrial Services": "Layanan Industri", "Transportation": "Transportasi",
+  "Consumer Durables": "Konsumen Sekunder", "Consumer Services": "Layanan Konsumen", "Commercial Services": "Layanan Komersial",
+  "Miscellaneous": "Lainnya", "Electronic Technology": "Teknologi Elektronik"
+};
+function sectorLabel(s){
+  if (LANG === "id") return SECTOR_ID[s] || s;
+  if (LANG === "zh") return SECTOR_ZH[s] || s;
+  return s;
+}
+function dimName(key){
+  if (LANG === "id") return { trend: "Tren", momentum: "Momentum", volatility: "Volatilitas", volume: "Volume" }[key] || key;
+  if (LANG === "zh") return { trend: "趋势", momentum: "动量", volatility: "波动", volume: "量能" }[key] || key;
+  return { trend: "Trend", momentum: "Momentum", volatility: "Volatility", volume: "Volume" }[key] || key;
+}
 function renderUniTabs(){
   var box = document.getElementById("uniTabs"); if (!box) return;
   var counts = {};
   IDX_UNIVERSE.forEach(function(r){ counts[r[2]] = (counts[r[2]] || 0) + 1; });
-  var tabs = [{ key: "all", label: "全部", n: IDX_UNIVERSE.length }];
+  var tabs = [{ key: "all", label: tr("全部", "Semua"), n: IDX_UNIVERSE.length }];
   Object.keys(counts).sort(function(a, b){ return counts[b] - counts[a]; }).forEach(function(s){ tabs.push({ key: s, label: sectorLabel(s), n: counts[s] }); });
   box.innerHTML = tabs.map(function(t){
     return '<button data-uni="' + t.key + '"' + (uniTab === t.key ? ' class="active"' : '') + '>' + t.label + ' <span class="muted">' + t.n + '</span></button>';
@@ -2164,6 +2549,7 @@ function applyI18n(){
 /* ---------- 10. 设置 ---------- */
 function openSettings(){
   document.getElementById("setProxy").value = CONFIG.proxy;
+  document.getElementById("setAuthUrl").value = CONFIG.authUrl;
   document.getElementById("setTheme").value = THEME;
   document.getElementById("setLang").value = LANG;
   document.getElementById("setRedup").value = REDUP ? "1" : "0";
@@ -2171,17 +2557,22 @@ function openSettings(){
   document.getElementById("setModal").hidden = false;
 }
 function saveSettings(){
+  var prevLang = LANG;
   var proxy = (document.getElementById("setProxy").value || "").trim();
   CONFIG.proxy = proxy || DEFAULT_PROXY;
+  var authUrl = (document.getElementById("setAuthUrl").value || "").trim();
+  CONFIG.authUrl = authUrl;
   THEME = document.getElementById("setTheme").value;
   LANG = document.getElementById("setLang").value;
   REDUP = document.getElementById("setRedup").value === "1";
   AUTO = document.getElementById("setAuto").value === "1";
   LS.setItem("idx_proxy", CONFIG.proxy);
+  LS.setItem("idx_auth_url", authUrl);
   LS.setItem("idx_theme", THEME);
   LS.setItem("idx_lang", LANG);
   LS.setItem("idx_redup", REDUP ? "1" : "0");
   LS.setItem("idx_auto", AUTO ? "1" : "0");
+  if (prevLang !== LANG) { location.reload(); return; }
   document.getElementById("langSel").value = LANG;
   document.getElementById("setModal").hidden = true;
   rerenderAll();
@@ -2227,7 +2618,7 @@ function wireUI(){
   document.getElementById("langSel").onchange = function(e){
     LANG = e.target.value;
     LS.setItem("idx_lang", LANG);
-    rerenderAll();
+    location.reload();
   };
   document.getElementById("diagClose").onclick = function(){ diag(""); };
   document.getElementById("qRefresh").onclick = function(){ loadQuant(currentSymbol, true); };
@@ -2389,7 +2780,10 @@ function wireUI(){
 }
 
 /* ---------- 14. 初始化 ---------- */
-(function init(){
+var __started = false;
+function startApp(){
+  if (__started) return;
+  __started = true;
   document.documentElement.dataset.theme = THEME;
   document.documentElement.dataset.redup = REDUP ? "1" : "0";
   document.getElementById("langSel").value = LANG;
@@ -2409,6 +2803,14 @@ function wireUI(){
   renderAlerts();
   applyPureTv();
   applyI18n();
+  translateDom();
+  try {
+    new MutationObserver(function(){
+      if (LANG !== "id") return;
+      clearTimeout(window.__trT);
+      window.__trT = setTimeout(translateDom, 80);
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  } catch (e) {}
   updateMarket();
   setInterval(updateMarket, 60000);
 
@@ -2430,7 +2832,22 @@ function wireUI(){
       clearInterval(iv);
     }
   }, 500);
-})();
+}
+
+function boot(){
+  wireAuth();
+  updateAcctUI();
+  var hint = document.getElementById("loginHint");
+  if (hint) hint.style.display = CONFIG.authUrl ? "none" : "block";
+  if (isAuthed()) {
+    document.getElementById("loginOverlay").style.display = "none";
+    startApp();
+  } else {
+    document.getElementById("loginOverlay").style.display = "flex";
+    setTimeout(function(){ var u = document.getElementById("loginUser"); if (u) u.focus(); }, 100);
+  }
+}
+boot();
 </script>
 </body>
 </html>
